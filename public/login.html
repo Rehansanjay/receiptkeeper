@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#4F46E5">
+    <title>Log In - ReceiptKeeper</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/mobile-enhancements.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <nav>
+        <div class="container">
+            <div class="logo"><a href="/" style="color: white; text-decoration: none;">ReceiptKeeper</a></div>
+            <div class="nav-links">
+                <a href="/signup.html">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>Welcome Back</h1>
+            <p>Log in to your account</p>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Log In</button>
+
+                <div id="error-message" class="error-message" style="display: none;"></div>
+            </form>
+
+            <p class="auth-footer">
+                Don't have an account? <a href="/signup.html">Sign up</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const button = e.target.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Logging in...';
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) throw error;
+
+                window.location.href = '/dashboard.html';
+
+            } catch (error) {
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+                button.disabled = false;
+                button.textContent = 'Log In';
+            }
+        });
+    </script>
+</body>
+
+</html>

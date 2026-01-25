@@ -1,0 +1,263 @@
+/* Additional Mobile Enhancements for Upload and Dashboard Pages */
+
+/* Upload Page - Mobile Optimizations */
+@media (max-width: 768px) {
+    .upload-container {
+        padding: 1rem;
+        margin: 1rem auto;
+    }
+
+    .upload-card {
+        padding: 1rem;
+    }
+
+    .upload-card h1 {
+        font-size: 1.5rem;
+    }
+
+    .upload-area {
+        padding: 2rem 1rem;
+        margin: 1rem 0;
+    }
+
+    .upload-icon {
+        font-size: 2rem;
+    }
+
+    .upload-area h3 {
+        font-size: 1rem;
+    }
+
+    .upload-area p {
+        font-size: 0.875rem;
+    }
+
+    .preview-container {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .preview-item img {
+        height: 100px;
+    }
+
+    .metadata-form {
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .btn-group {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .btn-group button {
+        width: 100%;
+    }
+}
+
+/* Dashboard - Mobile Optimizations */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 0 1rem;
+        margin: 1rem auto;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+
+    #welcome-message {
+        font-size: 0.875rem;
+    }
+
+    .export-btn {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-card h3 {
+        font-size: 0.75rem;
+    }
+
+    .stat-card .value {
+        font-size: 1.5rem;
+    }
+
+    .filters {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .filter-group {
+        min-width: 100%;
+    }
+
+    .filter-group label {
+        font-size: 0.875rem;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        font-size: 16px;
+        /* Prevents zoom on iOS */
+    }
+
+    .receipt-card {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .receipt-thumbnail,
+    .receipt-thumbnail-placeholder {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 1.5rem !important;
+    }
+
+    .receipt-info {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .receipt-info h3 {
+        font-size: 1rem;
+    }
+
+    .receipt-info .meta {
+        font-size: 0.8rem;
+    }
+
+    .receipt-card>div:last-child {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.5rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .receipt-amount {
+        font-size: 1.25rem;
+    }
+
+    .receipt-actions {
+        gap: 0.75rem;
+    }
+
+    .icon-btn {
+        padding: 0.75rem;
+        font-size: 1.125rem;
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+
+    .empty-state h2 {
+        font-size: 1.25rem;
+    }
+
+    .empty-state p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Very small devices (iPhone SE, etc.) */
+@media (max-width: 375px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card .value {
+        font-size: 1.75rem;
+    }
+
+    .receipt-card {
+        padding: 0.875rem;
+    }
+
+    .receipt-amount {
+        font-size: 1.125rem;
+    }
+}
+
+/* Tablet landscape */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .filter-row {
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        flex: 1 1 calc(33.333% - 1rem);
+        min-width: 200px;
+    }
+}
+
+/* Safe area insets for notched devices (iPhone X and newer) */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+    }
+
+    nav .container,
+    .container {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+    }
+}
+
+/* Prevent horizontal scroll on mobile */
+html,
+body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* Smooth scrolling for better UX */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Better touch scrolling on iOS */
+body {
+    -webkit-overflow-scrolling: touch;
+}

@@ -1,0 +1,371 @@
+/* Conversion-Optimized Section Styles */
+
+/* Stats Banner */
+.stats-banner {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    padding: 2.5rem 0;
+    color: white;
+}
+
+.stats-banner .container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.stat-label {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* Section Subtitles */
+.section-subtitle {
+    text-align: center;
+    font-size: 1.125rem;
+    color: #6b7280;
+    margin-top: -1.5rem;
+    margin-bottom: 3rem;
+    font-weight: 400;
+}
+
+/* Testimonials Grid */
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.stars {
+    color: #fbbf24;
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
+}
+
+.testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.author-info {
+    text-align: left;
+}
+
+.author-name {
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 0.25rem;
+    font-size: 1rem;
+}
+
+.author-role {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* CPA Endorsement */
+.cpa-endorsement {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 2px solid #86efac;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    margin-top: 3rem;
+}
+
+.endorsement-badge {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #059669;
+    margin-bottom: 1rem;
+}
+
+.endorsement-text {
+    font-size: 1.125rem;
+    color: #1a1a1a;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.endorsement-author {
+    font-size: 0.95rem;
+    color: #059669;
+    font-weight: 600;
+}
+
+/* Pricing Comparison */
+.pricing-comparison {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    align-items: start;
+}
+
+.comparison-item {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+}
+
+.comparison-item.faded {
+    opacity: 0.6;
+}
+
+.comparison-item h4 {
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
+    color: #6b7280;
+}
+
+.comparison-price {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: #1a1a1a;
+}
+
+.comparison-price span {
+    font-size: 1rem;
+    color: #9ca3af;
+}
+
+.comparison-list {
+    list-style: none;
+    text-align: left;
+}
+
+.comparison-list li {
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.comparison-list li.negative {
+    color: #ef4444;
+}
+
+/* Featured Price Card */
+.price-card.featured {
+    position: relative;
+    border: 3px solid #6366f1;
+    box-shadow: 0 20px 60px rgba(99, 102, 241, 0.2);
+    transform: scale(1.05);
+}
+
+.popular-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    padding: 0.4rem 1.5rem;
+    border-radius: 100px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.price-breakdown {
+    margin-bottom: 1.5rem;
+}
+
+.price-detail {
+    font-size: 0.95rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+.roi-highlight {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #fbbf24;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    font-size: 1.125rem;
+    color: #92400e;
+}
+
+.roi-highlight strong {
+    font-weight: 800;
+    color: #78350f;
+}
+
+.guarantee {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: #059669;
+    font-weight: 500;
+}
+
+/* FAQ Section */
+.faq-section {
+    padding: 5rem 0;
+    background: #f9fafb;
+}
+
+.faq-section h2 {
+    text-align: center;
+    font-size: 2.75rem;
+    margin-bottom: 3rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #0f0f23;
+}
+
+.faq-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.faq-item {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: #6366f1;
+}
+
+.faq-item h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 0.75rem;
+}
+
+.faq-item p {
+    color: #4b5563;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* Final CTA */
+.final-cta {
+    padding: 5rem 0;
+    background: linear-gradient(180deg, #0F0F23 0%, #1a1a3e 100%);
+    color: white;
+    text-align: center;
+}
+
+.final-cta h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+}
+
+.final-cta p {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 2rem;
+}
+
+.cta-button.large {
+    font-size: 1.25rem;
+    padding: 1.25rem 3rem;
+}
+
+.cta-subtext {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Footer Update */
+footer a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    margin: 0 0.5rem;
+    transition: color 0.2s ease;
+}
+
+footer a:hover {
+    color: rgba(255, 255, 255, 1);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .stats-banner .container {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+    }
+
+    .testimonials-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pricing-comparison {
+        grid-template-columns: 1fr;
+    }
+
+    .price-card.featured {
+        transform: scale(1);
+    }
+
+    .faq-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .final-cta h2 {
+        font-size: 1.75rem;
+    }
+
+    .final-cta p {
+        font-size: 1.125rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-banner {
+        padding: 2rem 0;
+    }
+
+    .stat-number {
+        font-size: 1.75rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+    }
+
+    .cpa-endorsement {
+        padding: 1.5rem;
+    }
+
+    .pricing-comparison {
+        gap: 1rem;
+    }
+
+    .comparison-item,
+    .price-card {
+        padding: 1.5rem;
+    }
+}
