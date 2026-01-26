@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #00ff00;
+        }
+
+        .success {
+            color: #00ff00;
+        }
+
+        .error {
+            color: #ff0000;
+        }
+
+        .warning {
+            color: #ffaa00;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #00dd00;
+        }
+
+        pre {
+            background: #000;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        input {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 ReceiptKeeper - Supabase Diagnostic Tool</h1>
+
+    <div class="test-section">
+        <h2>1. Configuration Check</h2>
+        <div id="config-check">Running checks...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Supabase Connection Test</h2>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Sign-Up Test</h2>
+        <input type="text" id="test-name" placeholder="Full Name" value="Test User">
+        <input type="email" id="test-email" placeholder="Email" value="">
+        <input type="password" id="test-password" placeholder="Password (min 6 chars)" value="test123456">
+        <input type="text" id="test-business" placeholder="Business Name (optional)" value="Test Business">
+        <button onclick="testSignUp()">Test Sign-Up</button>
+        <div id="signup-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Database Check</h2>
+        <button onclick="checkDatabase()">Check Tables & Policies</button>
+        <div id="database-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Console Logs</h2>
+        <div id="console-logs" style="max-height: 300px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://hiscskqwlgavicihsote.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpc2Nza3F3bGdhdmljaWhzb3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDc2MDMsImV4cCI6MjA4NDk4MzYwM30.Acu9LBOgIa_kLlm4gcDb06Dw8cwxnYxeyr_gI7PweL8';
+
+        let supabase;
+        const logs = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push({ message: logEntry, type });
+
+            const consoleDiv = document.getElementById('console-logs');
+            const logElement = document.createElement('div');
+            logElement.className = type;
+            logElement.textContent = logEntry;
+            consoleDiv.appendChild(logElement);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+
+            console.log(message);
+        }
+
+        // Configuration Check
+        function checkConfig() {
+            const configDiv = document.getElementById('config-check');
+            let html = '';
+
+            // Check if Supabase library loaded
+            if (typeof window.supabase === 'undefined') {
+                html += '<p class="error">❌ Supabase library NOT loaded</p>';
+                log('ERROR: Supabase library not loaded', 'error');
+            } else {
+                html += '<p class="success">✅ Supabase library loaded</p>';
+                log('Supabase library loaded successfully', 'success');
+            }
+
+            // Check URL
+            if (SUPABASE_URL && SUPABASE_URL.startsWith('https://')) {
+                html += `<p class="success">✅ Supabase URL: ${SUPABASE_URL}</p>`;
+                log(`Supabase URL configured: ${SUPABASE_URL}`, 'success');
+            } else {
+                html += '<p class="error">❌ Invalid Supabase URL</p>';
+                log('ERROR: Invalid Supabase URL', 'error');
+            }
+
+            // Check Anon Key
+            if (SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.startsWith('eyJ')) {
+                html += `<p class="success">✅ Anon Key format: Valid JWT (${SUPABASE_ANON_KEY.substring(0, 30)}...)</p>`;
+                log('Anon key format is valid', 'success');
+            } else {
+                html += '<p class="error">❌ Invalid Anon Key format</p>';
+                log('ERROR: Invalid anon key format', 'error');
+            }
+
+            // Try to create client
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                html += '<p class="success">✅ Supabase client created successfully</p>';
+                log('Supabase client initialized', 'success');
+            } catch (error) {
+                html += `<p class="error">❌ Failed to create client: ${error.message}</p>`;
+                log(`ERROR creating client: ${error.message}`, 'error');
+            }
+
+            configDiv.innerHTML = html;
+        }
+
+        // Test Connection
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '<p class="warning">Testing connection...</p>';
+            log('Testing Supabase connection...');
+
+            try {
+                const { data, error } = await supabase.auth.getSession();
+
+                if (error) {
+                    resultDiv.innerHTML = `<p class="error">❌ Connection failed: ${error.message}</p>`;
+                    log(`Connection error: ${error.message}`, 'error');
+                } else {
+                    resultDiv.innerHTML = `<p class="success">✅ Connection successful!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    log('Connection test passed', 'success');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Exception: ${error.message}</p>`;
+                log(`Connection exception: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Sign-Up
+        async function testSignUp() {
+            const resultDiv = document.getElementById('signup-result');
+            const name = document.getElementById('test-name').value;
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            const business = document.getElementById('test-business').value;
+
+            if (!email) {
+                resultDiv.innerHTML = '<p class="error">❌ Please enter an email</p>';
+                return;
+            }
+
+            // Generate unique email for testing
+            const uniqueEmail = email.includes('@') ? email : `test${Date.now()}@example.com`;
+            document.getElementById('test-email').value = uniqueEmail;
+
+            resultDiv.innerHTML = '<p class="warning">⏳ Creating account...</p>';
+            log(`Attempting sign-up: ${uniqueEmail}`);
+
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: uniqueEmail,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            business_name: business
+                        }
+                    }
+                });
+
+                log(`Sign-up response received`, 'success');
+                log(`Data: ${JSON.stringify(data)}`, 'info');
+
+                if (error) {
+                    resultDiv.innerHTML = `<p class="error">❌ Sign-up failed: ${error.message}</p><pre>${JSON.stringify(error, null, 2)}</pre>`;
+                    log(`Sign-up error: ${error.message}`, 'error');
+                } else {
+                    let html = '<p class="success">✅ Sign-up successful!</p>';
+
+                    if (data.user) {
+                        html += `<p class="success">User ID: ${data.user.id}</p>`;
+                        html += `<p class="success">Email: ${data.user.email}</p>`;
+                    }
+
+                    if (data.session) {
+                        html += '<p class="success">✅ Session created (email confirmation disabled)</p>';
+                    } else {
+                        html += '<p class="warning">⚠️ No session (email confirmation may be required)</p>';
+                    }
+
+                    html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    resultDiv.innerHTML = html;
+                    log('Sign-up completed successfully', 'success');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Exception: ${error.message}</p><pre>${JSON.stringify(error, null, 2)}</pre>`;
+                log(`Sign-up exception: ${error.message}`, 'error');
+            }
+        }
+
+        // Check Database
+        async function checkDatabase() {
+            const resultDiv = document.getElementById('database-result');
+            resultDiv.innerHTML = '<p class="warning">⏳ Checking database...</p>';
+            log('Checking database tables...');
+
+            try {
+                // Try to query profiles table
+                const { data: profiles, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(1);
+
+                let html = '';
+
+                if (profileError) {
+                    if (profileError.code === '42P01') {
+                        html += '<p class="error">❌ Profiles table does NOT exist</p>';
+                        log('ERROR: Profiles table not found', 'error');
+                    } else {
+                        html += `<p class="warning">⚠️ Profiles table check: ${profileError.message}</p>`;
+                        log(`Profiles table warning: ${profileError.message}`, 'warning');
+                    }
+                } else {
+                    html += '<p class="success">✅ Profiles table exists and is accessible</p>';
+                    log('Profiles table found', 'success');
+                }
+
+                // Try to query receipts table
+                const { data: receipts, error: receiptError } = await supabase
+                    .from('receipts')
+                    .select('*')
+                    .limit(1);
+
+                if (receiptError) {
+                    if (receiptError.code === '42P01') {
+                        html += '<p class="error">❌ Receipts table does NOT exist</p>';
+                        log('ERROR: Receipts table not found', 'error');
+                    } else {
+                        html += `<p class="warning">⚠️ Receipts table check: ${receiptError.message}</p>`;
+                        log(`Receipts table warning: ${receiptError.message}`, 'warning');
+                    }
+                } else {
+                    html += '<p class="success">✅ Receipts table exists and is accessible</p>';
+                    log('Receipts table found', 'success');
+                }
+
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Database check failed: ${error.message}</p>`;
+                log(`Database check error: ${error.message}`, 'error');
+            }
+        }
+
+        // Run config check on load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkConfig();
+            log('Diagnostic tool loaded', 'success');
+        });
+    </script>
+</body>
+
+</html>

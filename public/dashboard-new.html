@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ReceiptKeeper</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+        }
+
+        nav {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav h1 {
+            font-size: 1.5rem;
+        }
+
+        nav button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        nav button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .welcome {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome h2 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome p {
+            color: #666;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #10b981;
+            color: white;
+        }
+
+        .receipts {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-state h3 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state p {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <h1>🧾 ReceiptKeeper</h1>
+        <button id="logout-btn">Log Out</button>
+    </nav>
+
+    <div class="container">
+        <div class="welcome">
+            <h2 id="welcome-msg">Welcome!</h2>
+            <p id="user-email"></p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Receipts</h3>
+                <div class="value" id="total-receipts">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Amount</h3>
+                <div class="value" id="total-amount">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>This Month</h3>
+                <div class="value" id="month-receipts">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Business Expenses</h3>
+                <div class="value" id="business-amount">$0.00</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" onclick="window.location.href='/upload.html'">📤 Upload Receipt</button>
+            <button class="btn btn-secondary" id="export-btn">📥 Export Tax Package</button>
+        </div>
+
+        <div class="receipts">
+            <h3 style="margin-bottom: 1.5rem;">Recent Receipts</h3>
+            <div id="receipts-list">
+                <div class="empty-state">
+                    <h3>No receipts yet</h3>
+                    <p>Start uploading your receipts to keep track of your expenses</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            url: 'https://hiscskqwlgavicihsote.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpc2Nza3F3bGdhdmljaWhzb3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDc2MDMsImV4cCI6MjA4NDk4MzYwM30.Acu9LBOgIa_kLlm4gcDb06Dw8cwxnYxeyr_gI7PweL8'
+        };
+
+        const sb = window.supabase.createClient(CONFIG.url, CONFIG.key);
+        let currentUser = null;
+        let allReceipts = [];
+
+        // Initialize dashboard
+        async function init() {
+            console.log('📊 Dashboard initializing...');
+
+            // Check authentication
+            const { data: { session }, error } = await sb.auth.getSession();
+
+            if (error) {
+                console.error('❌ Session error:', error);
+                window.location.href = '/login-new.html';
+                return;
+            }
+
+            if (!session) {
+                console.log('❌ No session found');
+                window.location.href = '/login-new.html';
+                return;
+            }
+
+            currentUser = session.user;
+            console.log('✅ User authenticated:', currentUser.email);
+
+            // Load user data
+            await loadProfile();
+            await loadReceipts();
+
+            // Setup event listeners
+            setupLogout();
+            setupExport();
+        }
+
+        async function loadProfile() {
+            try {
+                document.getElementById('user-email').textContent = currentUser.email;
+
+                const { data, error } = await sb
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (error) {
+                    console.warn('⚠️ Profile not found, using email');
+                    document.getElementById('welcome-msg').textContent = `Welcome, ${currentUser.email}!`;
+                    return;
+                }
+
+                const name = data.full_name || data.business_name || currentUser.email;
+                document.getElementById('welcome-msg').textContent = `Welcome back, ${name}!`;
+                console.log('✅ Profile loaded');
+            } catch (error) {
+                console.error('❌ Error loading profile:', error);
+            }
+        }
+
+        async function loadReceipts() {
+            try {
+                const { data, error } = await sb
+                    .from('receipts')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('receipt_date', { ascending: false });
+
+                if (error) throw error;
+
+                allReceipts = data || [];
+                console.log(`✅ Loaded ${allReceipts.length} receipts`);
+
+                updateStats();
+                displayReceipts();
+            } catch (error) {
+                console.error('❌ Error loading receipts:', error);
+            }
+        }
+
+        function updateStats() {
+            const total = allReceipts.length;
+            const totalAmount = allReceipts.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+            const businessAmount = allReceipts
+                .filter(r => r.is_business)
+                .reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+
+            const now = new Date();
+            const thisMonth = allReceipts.filter(r => {
+                const date = new Date(r.receipt_date);
+                return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+            }).length;
+
+            document.getElementById('total-receipts').textContent = total;
+            document.getElementById('total-amount').textContent = `$${totalAmount.toFixed(2)}`;
+            document.getElementById('month-receipts').textContent = thisMonth;
+            document.getElementById('business-amount').textContent = `$${businessAmount.toFixed(2)}`;
+        }
+
+        function displayReceipts() {
+            const container = document.getElementById('receipts-list');
+
+            if (allReceipts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No receipts yet</h3>
+                        <p>Start uploading your receipts to keep track of your expenses</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = allReceipts.slice(0, 5).map(r => {
+                const date = new Date(r.receipt_date).toLocaleDateString();
+                return `
+                    <div style="padding: 1rem; border-bottom: 1px solid #eee;">
+                        <strong>${r.merchant_name}</strong> - $${parseFloat(r.amount).toFixed(2)}
+                        <br>
+                        <small style="color: #666;">${date} • ${r.is_business ? 'Business' : 'Personal'}</small>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setupLogout() {
+            document.getElementById('logout-btn').addEventListener('click', async function () {
+                console.log('🚪 Logging out...');
+
+                try {
+                    const { error } = await sb.auth.signOut();
+                    if (error) throw error;
+
+                    console.log('✅ Logged out successfully');
+                    window.location.href = '/test-portal.html';
+                } catch (error) {
+                    console.error('❌ Logout error:', error);
+                    alert('Error logging out. Please try again.');
+                }
+            });
+        }
+
+        function setupExport() {
+            document.getElementById('export-btn').addEventListener('click', function () {
+                if (allReceipts.length === 0) {
+                    alert('No receipts to export');
+                    return;
+                }
+
+                const businessReceipts = allReceipts.filter(r => r.is_business);
+                const csv = generateCSV(businessReceipts);
+                downloadCSV(csv);
+
+                alert(`Exported ${businessReceipts.length} business receipts`);
+            });
+        }
+
+        function generateCSV(receipts) {
+            const headers = ['Date', 'Merchant', 'Amount', 'Notes'];
+            const rows = receipts.map(r => [
+                r.receipt_date,
+                r.merchant_name,
+                r.amount,
+                r.notes || ''
+            ]);
+
+            return [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+            ].join('\n');
+        }
+
+        function downloadCSV(csv) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `receipts_${new Date().getFullYear()}.csv`;
+            a.click();
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+
+</html>

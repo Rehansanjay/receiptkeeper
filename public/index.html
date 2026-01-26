@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#4F46E5">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>ReceiptKeeper - Never Lose a Business Receipt Again</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,13 +17,14 @@
     <link rel="stylesheet" href="/css/premium-enhancements.css">
     <link rel="stylesheet" href="/css/conversion-styles.css">
     <link rel="stylesheet" href="/css/early-access-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
     <nav>
         <div class="container">
             <div class="logo">ReceiptKeeper</div>
-            <div class="nav-links">
+            <div class="nav-links" id="nav-links">
                 <a href="/signup.html">Sign Up</a>
                 <a href="/login.html">Log In</a>
             </div>
@@ -238,6 +239,26 @@
                     href="/privacy.html">Privacy Policy</a> • <a href="/terms.html">Terms of Service</a></p>
         </div>
     </footer>
+
+    <script src="/js/config.js"></script>
+    <script>
+        // Check if user is logged in and update navigation
+        ReceiptKeeper.getSession().then(function (session) {
+            if (session) {
+                const navLinks = document.getElementById('nav-links');
+                navLinks.innerHTML = `
+                    <a href="/dashboard.html">Dashboard</a>
+                    <a href="#" id="logout-btn">Log Out</a>
+                `;
+
+                document.getElementById('logout-btn').addEventListener('click', async function (e) {
+                    e.preventDefault();
+                    await ReceiptKeeper.signOut();
+                    window.location.reload();
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

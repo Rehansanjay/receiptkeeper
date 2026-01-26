@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Diagnostic Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #0f0;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .section {
+            background: #1a1a1a;
+            border: 2px solid #0f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #0ff;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #0d0;
+        }
+
+        input {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .success {
+            color: #0f0;
+        }
+
+        .error {
+            color: #f00;
+        }
+
+        .warning {
+            color: #fa0;
+        }
+
+        .info {
+            color: #0ff;
+        }
+
+        pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            padding: 5px;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+
+        #logs {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 ReceiptKeeper Diagnostic Tool</h1>
+
+    <div class="section">
+        <h2>1️⃣ Configuration Status</h2>
+        <div id="config"></div>
+    </div>
+
+    <div class="section">
+        <h2>2️⃣ Connection Test</h2>
+        <button onclick="runConnectionTest()">Test Connection</button>
+        <div id="connection"></div>
+    </div>
+
+    <div class="section">
+        <h2>3️⃣ Sign-Up Test</h2>
+        <input type="text" id="name" placeholder="Full Name" value="Test User">
+        <input type="email" id="email" placeholder="Email (leave empty for auto-generate)">
+        <input type="password" id="password" placeholder="Password" value="test123456">
+        <input type="text" id="business" placeholder="Business Name" value="Test Business">
+        <button onclick="runSignUpTest()">Test Sign-Up</button>
+        <div id="signup"></div>
+    </div>
+
+    <div class="section">
+        <h2>4️⃣ Database Check</h2>
+        <button onclick="runDatabaseTest()">Check Database Tables</button>
+        <div id="database"></div>
+    </div>
+
+    <div class="section">
+        <h2>5️⃣ Activity Logs</h2>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            url: 'https://hiscskqwlgavicihsote.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpc2Nza3F3bGdhdmljaWhzb3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDc2MDMsImV4cCI6MjA4NDk4MzYwM30.Acu9LBOgIa_kLlm4gcDb06Dw8cwxnYxeyr_gI7PweL8'
+        };
+
+        let client = null;
+
+        // Logging
+        function addLog(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('logs');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${time}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        // Initialize
+        function initialize() {
+            const configDiv = document.getElementById('config');
+            let html = '';
+
+            // Check library
+            if (typeof window.supabase === 'undefined') {
+                html += '<p class="error">❌ Supabase library NOT loaded</p>';
+                addLog('Supabase library failed to load', 'error');
+                configDiv.innerHTML = html;
+                return;
+            }
+            html += '<p class="success">✅ Supabase library loaded</p>';
+            addLog('Supabase library loaded', 'success');
+
+            // Check URL
+            if (CONFIG.url && CONFIG.url.startsWith('https://')) {
+                html += `<p class="success">✅ URL: ${CONFIG.url}</p>`;
+                addLog(`URL configured: ${CONFIG.url}`, 'success');
+            } else {
+                html += '<p class="error">❌ Invalid URL</p>';
+                addLog('Invalid URL', 'error');
+            }
+
+            // Check key
+            if (CONFIG.key && CONFIG.key.startsWith('eyJ')) {
+                html += `<p class="success">✅ Key: ${CONFIG.key.substring(0, 30)}...</p>`;
+                addLog('Anon key format valid', 'success');
+            } else {
+                html += '<p class="error">❌ Invalid key format</p>';
+                addLog('Invalid key format', 'error');
+            }
+
+            // Create client
+            try {
+                client = window.supabase.createClient(CONFIG.url, CONFIG.key);
+                html += '<p class="success">✅ Supabase client initialized</p>';
+                addLog('Client created successfully', 'success');
+            } catch (err) {
+                html += `<p class="error">❌ Client creation failed: ${err.message}</p>`;
+                addLog(`Client creation error: ${err.message}`, 'error');
+            }
+
+            configDiv.innerHTML = html;
+        }
+
+        // Connection test
+        async function runConnectionTest() {
+            const div = document.getElementById('connection');
+            div.innerHTML = '<p class="warning">⏳ Testing...</p>';
+            addLog('Testing connection...');
+
+            try {
+                const { data, error } = await client.auth.getSession();
+                if (error) {
+                    div.innerHTML = `<p class="error">❌ Failed: ${error.message}</p>`;
+                    addLog(`Connection failed: ${error.message}`, 'error');
+                } else {
+                    div.innerHTML = `<p class="success">✅ Connection successful!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    addLog('Connection successful', 'success');
+                }
+            } catch (err) {
+                div.innerHTML = `<p class="error">❌ Error: ${err.message}</p>`;
+                addLog(`Connection error: ${err.message}`, 'error');
+            }
+        }
+
+        // Sign-up test
+        async function runSignUpTest() {
+            const div = document.getElementById('signup');
+            const name = document.getElementById('name').value;
+            let email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const business = document.getElementById('business').value;
+
+            // Auto-generate email if empty
+            if (!email || !email.includes('@')) {
+                email = `test${Date.now()}@example.com`;
+                document.getElementById('email').value = email;
+            }
+
+            div.innerHTML = '<p class="warning">⏳ Creating account...</p>';
+            addLog(`Sign-up attempt: ${email}`);
+
+            try {
+                const { data, error } = await client.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            business_name: business
+                        }
+                    }
+                });
+
+                if (error) {
+                    div.innerHTML = `<p class="error">❌ Sign-up failed</p><p class="error">${error.message}</p><pre>${JSON.stringify(error, null, 2)}</pre>`;
+                    addLog(`Sign-up error: ${error.message}`, 'error');
+                } else {
+                    let html = '<p class="success">✅ Sign-up successful!</p>';
+
+                    if (data.user) {
+                        html += `<p class="info">User ID: ${data.user.id}</p>`;
+                        html += `<p class="info">Email: ${data.user.email}</p>`;
+                    }
+
+                    if (data.session) {
+                        html += '<p class="success">✅ Session created (no email confirmation needed)</p>';
+                    } else {
+                        html += '<p class="warning">⚠️ No session - email confirmation may be required</p>';
+                        html += '<p class="warning">Go to Supabase Dashboard → Auth → Providers → Email → Disable "Confirm email"</p>';
+                    }
+
+                    html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    div.innerHTML = html;
+                    addLog('Sign-up successful', 'success');
+                }
+            } catch (err) {
+                div.innerHTML = `<p class="error">❌ Exception: ${err.message}</p><pre>${JSON.stringify(err, null, 2)}</pre>`;
+                addLog(`Sign-up exception: ${err.message}`, 'error');
+            }
+        }
+
+        // Database test
+        async function runDatabaseTest() {
+            const div = document.getElementById('database');
+            div.innerHTML = '<p class="warning">⏳ Checking tables...</p>';
+            addLog('Checking database...');
+
+            let html = '';
+
+            try {
+                // Check profiles
+                const { data: p, error: pErr } = await client.from('profiles').select('*').limit(1);
+                if (pErr) {
+                    if (pErr.code === '42P01') {
+                        html += '<p class="error">❌ Profiles table does NOT exist</p>';
+                        html += '<p class="warning">Run SQL from SUPABASE_SETUP.md</p>';
+                        addLog('Profiles table missing', 'error');
+                    } else {
+                        html += `<p class="warning">⚠️ Profiles: ${pErr.message}</p>`;
+                        addLog(`Profiles check: ${pErr.message}`, 'warning');
+                    }
+                } else {
+                    html += '<p class="success">✅ Profiles table exists</p>';
+                    addLog('Profiles table found', 'success');
+                }
+
+                // Check receipts
+                const { data: r, error: rErr } = await client.from('receipts').select('*').limit(1);
+                if (rErr) {
+                    if (rErr.code === '42P01') {
+                        html += '<p class="error">❌ Receipts table does NOT exist</p>';
+                        addLog('Receipts table missing', 'error');
+                    } else {
+                        html += `<p class="warning">⚠️ Receipts: ${rErr.message}</p>`;
+                        addLog(`Receipts check: ${rErr.message}`, 'warning');
+                    }
+                } else {
+                    html += '<p class="success">✅ Receipts table exists</p>';
+                    addLog('Receipts table found', 'success');
+                }
+
+                div.innerHTML = html;
+            } catch (err) {
+                div.innerHTML = `<p class="error">❌ Database check failed: ${err.message}</p>`;
+                addLog(`Database error: ${err.message}`, 'error');
+            }
+        }
+
+        // Run on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initialize();
+            addLog('Diagnostic tool ready', 'success');
+        });
+    </script>
+</body>
+
+</html>

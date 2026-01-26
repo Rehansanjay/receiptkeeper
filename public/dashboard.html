@@ -3,197 +3,437 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <meta name="theme-color" content="#4F46E5">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - ReceiptKeeper</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/mobile-enhancements.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .dashboard-header {
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #F3F4F6;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
         }
 
-        .dashboard-header h1 {
-            font-size: 2rem;
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
+        .nav-brand h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Trial Banner */
+        .trial-banner {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border-bottom: 1px solid #F59E0B;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .trial-banner.expired {
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            border-color: #EF4444;
+        }
+
+        .trial-banner.active {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            border-color: #10B981;
+        }
+
+        .trial-text {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #92400E;
+        }
+
+        .trial-banner.expired .trial-text {
+            color: #991B1B;
+        }
+
+        .trial-banner.active .trial-text {
+            color: #065F46;
+        }
+
+        .trial-badge {
+            background: #F59E0B;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .trial-banner.expired .trial-badge {
+            background: #EF4444;
+        }
+
+        .trial-banner.active .trial-badge {
+            background: #10B981;
+        }
+
+        .upgrade-btn {
+            background: #4F46E5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .upgrade-btn:hover {
+            background: #4338CA;
+            transform: translateY(-1px);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Welcome Section */
+        .welcome-card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .welcome-card h2 {
+            font-size: 1.5rem;
+            color: #1F2937;
+            margin-bottom: 6px;
+        }
+
+        .welcome-card p {
+            color: #6B7280;
+            font-size: 0.95rem;
+        }
+
+        /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
         }
 
         .stat-card {
             background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
 
         .stat-card h3 {
-            color: #6b7280;
-            font-size: 0.875rem;
+            color: #6B7280;
+            font-size: 0.85rem;
             font-weight: 500;
-            margin-bottom: 0.5rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .stat-card .value {
             font-size: 2rem;
-            font-weight: bold;
-            color: #4F46E5;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .filters {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
+        .stat-card.business .value {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
         }
 
-        .filter-row {
+        /* Action Buttons */
+        .actions {
             display: flex;
-            gap: 1rem;
+            gap: 16px;
+            margin-bottom: 24px;
             flex-wrap: wrap;
         }
 
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .receipts-grid {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .receipt-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: 1.5rem;
-            align-items: center;
-        }
-
-        .receipt-thumbnail {
-            width: 80px;
-            height: 80px;
-            border-radius: 8px;
-            object-fit: cover;
-            border: 1px solid #e5e7eb;
-        }
-
-        .receipt-info h3 {
-            font-size: 1.125rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .receipt-info .meta {
-            color: #6b7280;
-            font-size: 0.875rem;
-        }
-
-        .receipt-amount {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #4F46E5;
-        }
-
-        .receipt-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .icon-btn {
-            background: #f3f4f6;
-            border: none;
-            padding: 0.5rem;
-            border-radius: 6px;
+        .btn {
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            border: none;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
         }
 
-        .icon-btn:hover {
-            background: #e5e7eb;
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Receipts Section */
+        .receipts-section {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .receipts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .receipts-header h3 {
+            font-size: 1.2rem;
+            color: #1F2937;
         }
 
         .empty-state {
             text-align: center;
-            padding: 4rem 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 60px 20px;
         }
 
-        .empty-state h2 {
-            margin-bottom: 1rem;
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 1.25rem;
         }
 
         .empty-state p {
-            color: #6b7280;
-            margin-bottom: 2rem;
+            color: #6B7280;
+            margin-bottom: 24px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .export-btn {
-            background: #10b981;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
+        /* Receipt List */
+        .receipt-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #F3F4F6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             transition: background 0.2s;
         }
 
-        .export-btn:hover {
-            background: #059669;
+        .receipt-item:last-child {
+            border-bottom: none;
         }
 
-        textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-family: inherit;
-            resize: vertical;
+        .receipt-item:hover {
+            background: #F9FAFB;
+            margin: 0 -28px;
+            padding: 16px 28px;
+        }
+
+        .receipt-info h4 {
+            color: #1F2937;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .receipt-meta {
+            color: #6B7280;
+            font-size: 0.85rem;
+            display: flex;
+            gap: 12px;
+        }
+
+        .receipt-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-business {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .badge-personal {
+            background: #E5E7EB;
+            color: #374151;
+        }
+
+        .receipt-amount {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1F2937;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #E5E7EB;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+
+            .trial-banner {
+                flex-wrap: wrap;
+                justify-content: center;
+                text-align: center;
+            }
         }
     </style>
 </head>
 
 <body>
     <nav>
-        <div class="container">
-            <div class="logo"><a href="/" style="color: white; text-decoration: none;">ReceiptKeeper</a></div>
-            <div class="nav-links">
-                <a href="/upload.html">Upload Receipt</a>
-                <a href="#" id="logout-btn">Log Out</a>
-            </div>
+        <div class="nav-brand">
+            <span style="font-size: 1.5rem;">🧾</span>
+            <h1>ReceiptKeeper</h1>
+        </div>
+        <div class="nav-actions">
+            <button class="nav-btn" onclick="window.location.href='/'">Home</button>
+            <button class="nav-btn" id="logout-btn">Log Out</button>
         </div>
     </nav>
 
-    <div class="dashboard-container">
-        <div class="dashboard-header">
-            <div>
-                <h1>My Receipts</h1>
-                <p id="welcome-message">Welcome back!</p>
-            </div>
-            <button class="export-btn" id="export-btn">📥 Export Tax Package</button>
+    <!-- Trial Banner - Hidden by default, shown via JS -->
+    <div id="trial-banner" class="trial-banner" style="display: none;">
+        <span class="trial-badge" id="trial-badge">TRIAL</span>
+        <span class="trial-text" id="trial-text">Loading trial status...</span>
+        <button class="upgrade-btn" id="upgrade-btn" style="display: none;">Upgrade Now</button>
+    </div>
+
+    <div class="container">
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <h2 id="welcome-msg">Welcome!</h2>
+            <p id="user-email">Loading...</p>
         </div>
 
+        <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card">
                 <h3>Total Receipts</h3>
@@ -207,49 +447,325 @@
                 <h3>This Month</h3>
                 <div class="value" id="month-receipts">0</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card business">
                 <h3>Business Expenses</h3>
                 <div class="value" id="business-amount">$0.00</div>
             </div>
         </div>
 
-        <div class="filters">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label for="year-filter">Year</label>
-                    <select id="year-filter">
-                        <option value="">All Years</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="month-filter">Month</label>
-                    <select id="month-filter">
-                        <option value="">All Months</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="search-input">Search</label>
-                    <input type="text" id="search-input" placeholder="Search merchant...">
+        <!-- Action Buttons -->
+        <div class="actions">
+            <button class="btn btn-primary" onclick="window.location.href='/upload.html'">
+                📤 Upload Receipt
+            </button>
+            <button class="btn btn-secondary" id="export-btn">
+                📥 Export Tax Package
+            </button>
+        </div>
+
+        <!-- Receipts Section -->
+        <div class="receipts-section">
+            <div class="receipts-header">
+                <h3>Recent Receipts</h3>
+            </div>
+            <div id="receipts-list">
+                <div class="loading">
+                    <div class="spinner"></div>
                 </div>
             </div>
         </div>
-
-        <div id="receipts-container" class="receipts-grid"></div>
     </div>
 
-    <script src="/js/dashboard.js"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            // Configuration
+            const CONFIG = {
+                url: 'https://hiscskqwlgavicihsote.supabase.co',
+                key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpc2Nza3F3bGdhdmljaWhzb3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDc2MDMsImV4cCI6MjA4NDk4MzYwM30.Acu9LBOgIa_kLlm4gcDb06Dw8cwxnYxeyr_gI7PweL8'
+            };
+
+            // Initialize Supabase
+            const sb = window.supabase.createClient(CONFIG.url, CONFIG.key);
+            let currentUser = null;
+            let allReceipts = [];
+            let userProfile = null;
+
+            console.log('📊 Dashboard initializing...');
+
+            // Initialize dashboard
+            async function init() {
+                try {
+                    // Check authentication
+                    const { data: { session }, error } = await sb.auth.getSession();
+
+                    if (error || !session) {
+                        console.log('❌ No session, redirecting to login');
+                        window.location.href = '/login.html';
+                        return;
+                    }
+
+                    currentUser = session.user;
+                    console.log('✅ User authenticated:', currentUser.email);
+
+                    // Update UI with user info
+                    document.getElementById('user-email').textContent = currentUser.email;
+
+                    // Load data
+                    await Promise.all([
+                        loadProfile(),
+                        loadReceipts()
+                    ]);
+
+                    // Setup event listeners
+                    setupLogout();
+                    setupExport();
+
+                } catch (err) {
+                    console.error('❌ Init error:', err);
+                    window.location.href = '/login.html';
+                }
+            }
+
+            // Load user profile and trial status
+            async function loadProfile() {
+                try {
+                    const { data, error } = await sb
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', currentUser.id)
+                        .single();
+
+                    if (error) {
+                        console.warn('⚠️ Profile not found:', error.message);
+                        document.getElementById('welcome-msg').textContent = `Welcome, ${currentUser.email.split('@')[0]}!`;
+                        // Show default trial banner for new users
+                        showTrialBanner({ subscription_status: 'trial', trial_end_date: null });
+                        return;
+                    }
+
+                    userProfile = data;
+                    const name = data.full_name || data.business_name || currentUser.email.split('@')[0];
+                    document.getElementById('welcome-msg').textContent = `Welcome back, ${name}!`;
+
+                    // Show trial status
+                    showTrialBanner(data);
+
+                    console.log('✅ Profile loaded');
+                } catch (err) {
+                    console.error('❌ Profile error:', err);
+                }
+            }
+
+            // Show trial banner based on subscription status
+            function showTrialBanner(profile) {
+                const banner = document.getElementById('trial-banner');
+                const badge = document.getElementById('trial-badge');
+                const text = document.getElementById('trial-text');
+                const upgradeBtn = document.getElementById('upgrade-btn');
+
+                if (!profile) {
+                    banner.style.display = 'none';
+                    return;
+                }
+
+                const status = profile.subscription_status || 'trial';
+
+                if (status === 'active') {
+                    // Paid user - show success banner
+                    banner.className = 'trial-banner active';
+                    badge.textContent = 'PRO';
+                    text.textContent = '✨ You have an active subscription. Thank you for your support!';
+                    upgradeBtn.style.display = 'none';
+                    banner.style.display = 'flex';
+                    return;
+                }
+
+                // Calculate days left in trial
+                let daysLeft = 14; // Default for new users
+                if (profile.trial_end_date) {
+                    const trialEnd = new Date(profile.trial_end_date);
+                    const now = new Date();
+                    daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+                }
+
+                if (daysLeft > 0) {
+                    // Active trial
+                    banner.className = 'trial-banner';
+                    badge.textContent = 'TRIAL';
+                    text.textContent = `🎉 You have ${daysLeft} day${daysLeft === 1 ? '' : 's'} left in your free trial`;
+                    upgradeBtn.style.display = 'inline-block';
+                    upgradeBtn.textContent = 'Upgrade to Pro - $29/year';
+                } else {
+                    // Trial expired
+                    banner.className = 'trial-banner expired';
+                    badge.textContent = 'EXPIRED';
+                    text.textContent = '⚠️ Your free trial has expired. Upgrade to continue using all features.';
+                    upgradeBtn.style.display = 'inline-block';
+                    upgradeBtn.textContent = 'Upgrade Now - $29/year';
+                }
+
+                banner.style.display = 'flex';
+
+                // Upgrade button click
+                upgradeBtn.onclick = function () {
+                    // TODO: Implement payment flow
+                    alert('Payment integration coming soon! For now, enjoy your trial.');
+                };
+            }
+
+            // Load receipts
+            async function loadReceipts() {
+                try {
+                    const { data, error } = await sb
+                        .from('receipts')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .order('receipt_date', { ascending: false });
+
+                    if (error) throw error;
+
+                    allReceipts = data || [];
+                    console.log(`✅ Loaded ${allReceipts.length} receipts`);
+
+                    updateStats();
+                    displayReceipts();
+                } catch (err) {
+                    console.error('❌ Receipts error:', err);
+                    document.getElementById('receipts-list').innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">⚠️</div>
+                            <h3>Unable to load receipts</h3>
+                            <p>Please refresh the page to try again.</p>
+                        </div>
+                    `;
+                }
+            }
+
+            // Update stats
+            function updateStats() {
+                const total = allReceipts.length;
+                const totalAmount = allReceipts.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+                const businessAmount = allReceipts
+                    .filter(r => r.is_business)
+                    .reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+
+                const now = new Date();
+                const thisMonth = allReceipts.filter(r => {
+                    const date = new Date(r.receipt_date);
+                    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                }).length;
+
+                document.getElementById('total-receipts').textContent = total;
+                document.getElementById('total-amount').textContent = `$${totalAmount.toFixed(2)}`;
+                document.getElementById('month-receipts').textContent = thisMonth;
+                document.getElementById('business-amount').textContent = `$${businessAmount.toFixed(2)}`;
+            }
+
+            // Display receipts
+            function displayReceipts() {
+                const container = document.getElementById('receipts-list');
+
+                if (allReceipts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📭</div>
+                            <h3>No receipts yet</h3>
+                            <p>Start by uploading your first receipt. It only takes a few seconds!</p>
+                            <button class="btn btn-primary" onclick="window.location.href='/upload.html'">
+                                📤 Upload Your First Receipt
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = allReceipts.slice(0, 10).map(r => {
+                    const date = new Date(r.receipt_date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    const badgeClass = r.is_business ? 'badge-business' : 'badge-personal';
+                    const badgeText = r.is_business ? 'Business' : 'Personal';
+
+                    return `
+                        <div class="receipt-item">
+                            <div class="receipt-info">
+                                <h4>${r.merchant_name || 'Unknown Merchant'}</h4>
+                                <div class="receipt-meta">
+                                    <span>📅 ${date}</span>
+                                    <span class="receipt-badge ${badgeClass}">${badgeText}</span>
+                                </div>
+                            </div>
+                            <div class="receipt-amount">$${parseFloat(r.amount || 0).toFixed(2)}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Logout handler
+            function setupLogout() {
+                document.getElementById('logout-btn').addEventListener('click', async function () {
+                    try {
+                        await sb.auth.signOut();
+                        console.log('✅ Logged out');
+                        window.location.href = '/';
+                    } catch (err) {
+                        console.error('❌ Logout error:', err);
+                        alert('Error logging out. Please try again.');
+                    }
+                });
+            }
+
+            // Export handler
+            function setupExport() {
+                document.getElementById('export-btn').addEventListener('click', function () {
+                    if (allReceipts.length === 0) {
+                        alert('No receipts to export. Upload some receipts first!');
+                        return;
+                    }
+
+                    const businessReceipts = allReceipts.filter(r => r.is_business);
+
+                    if (businessReceipts.length === 0) {
+                        alert('No business receipts to export. Mark some receipts as business expenses first.');
+                        return;
+                    }
+
+                    // Generate CSV
+                    const headers = ['Date', 'Merchant', 'Amount', 'Category', 'Notes'];
+                    const rows = businessReceipts.map(r => [
+                        r.receipt_date,
+                        `"${r.merchant_name || ''}"`,
+                        r.amount,
+                        r.category || 'Other',
+                        `"${(r.notes || '').replace(/"/g, '""')}"`
+                    ]);
+
+                    const csv = [
+                        headers.join(','),
+                        ...rows.map(row => row.join(','))
+                    ].join('\n');
+
+                    // Download
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `receipts_${new Date().getFullYear()}_tax_export.csv`;
+                    a.click();
+
+                    alert(`✅ Exported ${businessReceipts.length} business receipts!`);
+                });
+            }
+
+            // Initialize on load
+            init();
+
+        })();
+    </script>
 </body>
 
 </html>
