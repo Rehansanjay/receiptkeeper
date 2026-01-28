@@ -21,18 +21,104 @@
         console.log('✅ Using existing Supabase client');
     }
 
+    // ========== PASSWORD SECURITY CONFIGURATION ==========
+    const passwordRequirements = {
+        minLength: 12,
+        requireUppercase: true,
+        requireLowercase: true,
+        requireNumbers: true,
+        requireSpecialChars: true
+    };
+
+    // Password validation function
+    function validatePassword(password) {
+        const errors = [];
+
+        if (password.length < passwordRequirements.minLength) {
+            errors.push(`At least ${passwordRequirements.minLength} characters`);
+        }
+
+        if (passwordRequirements.requireUppercase && !/[A-Z]/.test(password)) {
+            errors.push('One uppercase letter (A-Z)');
+        }
+
+        if (passwordRequirements.requireLowercase && !/[a-z]/.test(password)) {
+            errors.push('One lowercase letter (a-z)');
+        }
+
+        if (passwordRequirements.requireNumbers && !/[0-9]/.test(password)) {
+            errors.push('One number (0-9)');
+        }
+
+        if (passwordRequirements.requireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+            errors.push('One special character (!@#$%^&* etc.)');
+        }
+
+        return errors;
+    }
+
+    // Calculate password strength
+    function getPasswordStrength(password) {
+        const errors = validatePassword(password);
+
+        if (password.length === 0) return { level: 'none', text: '', className: '' };
+        if (errors.length === 0) return { level: 'strong', text: '✓ Strong password', className: 'strong' };
+        if (errors.length <= 2) return { level: 'medium', text: '⚠ Medium strength', className: 'medium' };
+        return { level: 'weak', text: '✗ Weak password', className: 'weak' };
+    }
+
     // Signup Form Handler
     document.addEventListener('DOMContentLoaded', function () {
         const signupForm = document.getElementById('signup-form');
 
         if (signupForm) {
+            // Real-time password strength indicator
+            const passwordInput = document.getElementById('password');
+            if (passwordInput) {
+                passwordInput.addEventListener('input', function (e) {
+                    const password = e.target.value;
+                    const errors = validatePassword(password);
+                    const strength = getPasswordStrength(password);
+                    const strengthIndicator = document.getElementById('password-strength');
+                    const requirementsList = document.getElementById('password-requirements');
+
+                    if (strengthIndicator) {
+                        strengthIndicator.textContent = strength.text;
+                        strengthIndicator.className = 'password-strength ' + strength.className;
+                    }
+
+                    // Update requirements checklist
+                    if (requirementsList) {
+                        const requirements = [
+                            { id: 'req-length', check: password.length >= passwordRequirements.minLength, text: `${passwordRequirements.minLength}+ characters` },
+                            { id: 'req-uppercase', check: /[A-Z]/.test(password), text: 'Uppercase letter' },
+                            { id: 'req-lowercase', check: /[a-z]/.test(password), text: 'Lowercase letter' },
+                            { id: 'req-number', check: /[0-9]/.test(password), text: 'Number' },
+                            { id: 'req-special', check: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password), text: 'Special character' }
+                        ];
+
+                        requirementsList.innerHTML = requirements.map(req =>
+                            `<li class="${req.check ? 'met' : 'unmet'}">${req.check ? '✓' : '○'} ${req.text}</li>`
+                        ).join('');
+                    }
+                });
+            }
+
+            // Form submission handler
             signupForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
 
-                const fullName = document.getElementById('full-name').value;
-                const email = document.getElementById('email').value;
+                const fullName = document.getElementById('full-name').value.trim();
+                const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
-                const businessName = document.getElementById('business-name').value;
+                const businessName = document.getElementById('business-name').value.trim();
+
+                // Validate password before submitting
+                const passwordErrors = validatePassword(password);
+                if (passwordErrors.length > 0) {
+                    showMessage('Password must have: ' + passwordErrors.join(', '), 'error');
+                    return;
+                }
 
                 const button = signupForm.querySelector('button[type="submit"]');
                 button.disabled = true;

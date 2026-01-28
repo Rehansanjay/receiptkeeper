@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#4F46E5">
-    <title>Start Your Free Trial - ReceiptKeeper</title>
+    <title>Start Your Free Trial - Reciptera</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -150,6 +150,99 @@
             font-size: 0.8rem;
             color: #9CA3AF;
             margin-top: 6px;
+        }
+
+        /* Password Strength Indicator */
+        .password-strength {
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .password-strength.weak {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+
+        .password-strength.medium {
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FDE68A;
+        }
+
+        .password-strength.strong {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+
+        /* Password Requirements List */
+        .password-requirements {
+            list-style: none;
+            margin-top: 10px;
+            padding: 12px;
+            background: #F9FAFB;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .password-requirements li {
+            font-size: 0.8rem;
+            margin: 6px 0;
+            transition: all 0.2s;
+        }
+
+        .password-requirements li.met {
+            color: #059669;
+            font-weight: 500;
+        }
+
+        .password-requirements li.unmet {
+            color: #6B7280;
+        }
+
+        /* Password Toggle Button */
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input-wrapper input {
+            padding-right: 45px;
+            flex: 1;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6B7280;
+            transition: color 0.2s;
+            z-index: 10;
+        }
+
+        .password-toggle-btn:hover {
+            color: #4F46E5;
+        }
+
+        .password-toggle-btn:active {
+            transform: scale(0.95);
+        }
+
+        .password-toggle-btn svg {
+            width: 20px;
+            height: 20px;
         }
 
         .submit-btn {
@@ -330,9 +423,35 @@
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="Create a secure password" required minlength="6"
-                        autocomplete="new-password">
-                    <p class="password-hint">At least 6 characters</p>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="password" placeholder="Create a secure password" required
+                            minlength="12" autocomplete="new-password">
+                        <button type="button" class="password-toggle-btn" id="password-toggle"
+                            aria-label="Toggle password visibility">
+                            <!-- Eye Icon (Hidden) -->
+                            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <!-- Eye Slash Icon (Visible) -->
+                            <svg id="eye-slash-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="password-strength" class="password-strength" style="display: none;"></div>
+                    <ul id="password-requirements" class="password-requirements">
+                        <li class="unmet">○ 12+ characters</li>
+                        <li class="unmet">○ Uppercase letter</li>
+                        <li class="unmet">○ Lowercase letter</li>
+                        <li class="unmet">○ Number</li>
+                        <li class="unmet">○ Special character</li>
+                    </ul>
                 </div>
 
                 <div class="form-group">
@@ -389,10 +508,118 @@
             }
             checkExistingSession();
 
+            // ========== PASSWORD SECURITY CONFIGURATION ==========
+            const passwordRequirements = {
+                minLength: 12,
+                requireUppercase: true,
+                requireLowercase: true,
+                requireNumbers: true,
+                requireSpecialChars: true
+            };
+
+            // Password validation function
+            function validatePassword(password) {
+                const errors = [];
+
+                if (password.length < passwordRequirements.minLength) {
+                    errors.push(`At least ${passwordRequirements.minLength} characters`);
+                }
+
+                if (passwordRequirements.requireUppercase && !/[A-Z]/.test(password)) {
+                    errors.push('One uppercase letter (A-Z)');
+                }
+
+                if (passwordRequirements.requireLowercase && !/[a-z]/.test(password)) {
+                    errors.push('One lowercase letter (a-z)');
+                }
+
+                if (passwordRequirements.requireNumbers && !/[0-9]/.test(password)) {
+                    errors.push('One number (0-9)');
+                }
+
+                if (passwordRequirements.requireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+                    errors.push('One special character (!@#$%^&* etc.)');
+                }
+
+                return errors;
+            }
+
+            // Calculate password strength
+            function getPasswordStrength(password) {
+                const errors = validatePassword(password);
+
+                if (password.length === 0) return { level: 'none', text: '', className: '' };
+                if (errors.length === 0) return { level: 'strong', text: '✓ Strong password', className: 'strong' };
+                if (errors.length <= 2) return { level: 'medium', text: '⚠ Medium strength', className: 'medium' };
+                return { level: 'weak', text: '✗ Weak password', className: 'weak' };
+            }
+
             // Form Elements
             const form = document.getElementById('signup-form');
             const submitBtn = document.getElementById('submit-btn');
             const messageDiv = document.getElementById('message');
+            const passwordInput = document.getElementById('password');
+            const strengthIndicator = document.getElementById('password-strength');
+            const requirementsList = document.getElementById('password-requirements');
+
+            // Real-time password strength indicator
+            if (passwordInput) {
+                passwordInput.addEventListener('input', function (e) {
+                    const password = e.target.value;
+                    const strength = getPasswordStrength(password);
+
+                    // Show/hide strength indicator
+                    if (password.length > 0) {
+                        strengthIndicator.style.display = 'block';
+                        strengthIndicator.textContent = strength.text;
+                        strengthIndicator.className = 'password-strength ' + strength.className;
+                    } else {
+                        strengthIndicator.style.display = 'none';
+                    }
+
+                    // Update requirements checklist
+                    if (requirementsList) {
+                        const requirements = [
+                            { check: password.length >= passwordRequirements.minLength, text: `${passwordRequirements.minLength}+ characters` },
+                            { check: /[A-Z]/.test(password), text: 'Uppercase letter' },
+                            { check: /[a-z]/.test(password), text: 'Lowercase letter' },
+                            { check: /[0-9]/.test(password), text: 'Number' },
+                            { check: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password), text: 'Special character' }
+                        ];
+
+                        requirementsList.innerHTML = requirements.map(req =>
+                            `<li class="${req.check ? 'met' : 'unmet'}">${req.check ? '✓' : '○'} ${req.text}</li>`
+                        ).join('');
+                    }
+                });
+            }
+
+            // Password visibility toggle (auto-hide after 1 second)
+            const passwordToggleBtn = document.getElementById('password-toggle');
+            const eyeIcon = document.getElementById('eye-icon');
+            const eyeSlashIcon = document.getElementById('eye-slash-icon');
+            let hideTimeout = null;
+
+            if (passwordToggleBtn && passwordInput) {
+                passwordToggleBtn.addEventListener('click', function () {
+                    // Clear any existing timeout
+                    if (hideTimeout) {
+                        clearTimeout(hideTimeout);
+                    }
+
+                    // Show password
+                    passwordInput.type = 'text';
+                    eyeIcon.style.display = 'none';
+                    eyeSlashIcon.style.display = 'block';
+
+                    // Auto-hide after 1 second
+                    hideTimeout = setTimeout(function () {
+                        passwordInput.type = 'password';
+                        eyeIcon.style.display = 'block';
+                        eyeSlashIcon.style.display = 'none';
+                    }, 1000);
+                });
+            }
 
             // Show message helper
             function showMessage(text, type) {
@@ -428,8 +655,10 @@
                     return;
                 }
 
-                if (password.length < 6) {
-                    showMessage('Password must be at least 6 characters.', 'error');
+                // Validate password strength
+                const passwordErrors = validatePassword(password);
+                if (passwordErrors.length > 0) {
+                    showMessage('Password must have: ' + passwordErrors.join(', '), 'error');
                     return;
                 }
 

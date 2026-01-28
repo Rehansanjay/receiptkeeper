@@ -74,10 +74,180 @@
     function handleFiles(files) {
         selectedFiles = Array.from(files);
         displayPreviews();
-        document.getElementById('receipt-form').style.display = 'block';
+
+        // DON'T show form yet - wait for OCR to complete
+        // document.getElementById('receipt-form').style.display = 'block';
 
         // Set default date to today
         document.getElementById('receipt-date').valueAsDate = new Date();
+
+        // Process first image with OCR if it's an image
+        const firstImageFile = selectedFiles.find(file => file.type.startsWith('image/'));
+        if (firstImageFile) {
+            processReceiptWithOCR(firstImageFile);
+        } else {
+            // No image to process, show form immediately for manual entry
+            document.getElementById('receipt-form').style.display = 'block';
+        }
+    }
+
+    // ========== OCR FUNCTIONALITY ==========
+    async function processReceiptWithOCR(imageFile) {
+        const ocrLoading = document.getElementById('ocr-loading');
+        const ocrProgressFill = document.getElementById('ocr-progress-fill');
+        const ocrStatus = document.getElementById('ocr-status');
+
+        try {
+            // Show loading indicator
+            ocrLoading.classList.add('active');
+            ocrStatus.textContent = 'Initializing OCR engine...';
+            ocrProgressFill.style.width = '10%';
+
+            console.log('🔍 Starting OCR processing...');
+
+            // Process image with Tesseract
+            const result = await Tesseract.recognize(
+                imageFile,
+                'eng',
+                {
+                    logger: function (m) {
+                        // Update progress
+                        if (m.status === 'recognizing text') {
+                            const progress = Math.round(m.progress * 100);
+                            ocrProgressFill.style.width = `${10 + (progress * 0.8)}%`;
+                            ocrStatus.textContent = `Reading receipt... ${progress}%`;
+                        }
+                    }
+                }
+            );
+
+            ocrProgressFill.style.width = '95%';
+            ocrStatus.textContent = 'Extracting data...';
+
+            console.log('📄 OCR Text extracted:', result.data.text);
+
+            // Parse the extracted text
+            const extractedData = parseReceiptText(result.data.text);
+            console.log('✅ Extracted data:', extractedData);
+
+            // Auto-fill form fields
+            if (extractedData.merchant) {
+                const merchantInput = document.getElementById('merchant-name');
+                merchantInput.value = extractedData.merchant;
+                merchantInput.classList.add('auto-filled');
+            }
+
+            if (extractedData.amount) {
+                const amountInput = document.getElementById('amount');
+                amountInput.value = extractedData.amount;
+                amountInput.classList.add('auto-filled');
+            }
+
+
+            if (extractedData.date) {
+                const dateInput = document.getElementById('receipt-date');
+                dateInput.value = extractedData.date;
+                dateInput.classList.add('auto-filled');
+            }
+
+            // Success
+            ocrProgressFill.style.width = '100%';
+            ocrStatus.textContent = '✅ Receipt data extracted!';
+            ocrStatus.style.color = '#059669';
+
+            // Show form with pre-filled data immediately
+            document.getElementById('receipt-form').style.display = 'block';
+
+            // Hide loading after 1.5 seconds
+            setTimeout(function () {
+                ocrLoading.classList.remove('active');
+            }, 1500);
+
+        } catch (error) {
+            console.error('❌ OCR error:', error);
+            ocrStatus.textContent = '⚠️ Could not read receipt. Please enter manually.';
+            ocrStatus.style.color = '#DC2626';
+
+            // Show form for manual entry even if OCR failed
+            document.getElementById('receipt-form').style.display = 'block';
+
+            // Hide loading after 2 seconds
+            setTimeout(function () {
+                ocrLoading.classList.remove('active');
+            }, 2000);
+        }
+    }
+
+    // Parse extracted text to find merchant, amount, and date
+    function parseReceiptText(text) {
+        const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+        let merchant = '';
+        let amount = '';
+        let date = '';
+
+        // Find merchant name (usually in first 3 lines, longest line)
+        const topLines = lines.slice(0, 5);
+        merchant = topLines.reduce((longest, current) => {
+            // Skip lines that look like addresses or numbers
+            if (current.length > longest.length &&
+                !/^\d+/.test(current) &&
+                !/(street|st\.|ave|avenue|road|rd\.|blvd)/i.test(current)) {
+                return current;
+            }
+            return longest;
+        }, '');
+
+        // Find amount - look for total, amount due, etc.
+        const amountPatterns = [
+            /(?:total|amount due|balance|grand total)[:\s]*\$?\s*(\d+[.,]\d{2})/i,
+            /\$\s*(\d+[.,]\d{2})\s*(?:total|amount|balance)/i,
+            /(?:^|\s)(\d+[.,]\d{2})\s*(?:total|amount|balance|due)/i,
+            /total[:\s]*(\d+[.,]\d{2})/i,
+            /\$\s*(\d+[.,]\d{2})/g  // Fallback: any dollar amount
+        ];
+
+        for (const pattern of amountPatterns) {
+            const match = text.match(pattern);
+            if (match) {
+                amount = match[1].replace(',', '.');
+                break;
+            }
+        }
+
+        // Find date - multiple formats
+        const datePatterns = [
+            /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/,  // MM/DD/YYYY or DD-MM-YYYY
+            /(\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})/,    // YYYY-MM-DD
+            /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2},?\s+\d{2,4}/i,  // Month DD, YYYY
+            /\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{2,4}/i     // DD Month YYYY
+        ];
+
+        for (const pattern of datePatterns) {
+            const match = text.match(pattern);
+            if (match) {
+                date = convertToISODate(match[0]);
+                break;
+            }
+        }
+
+        return { merchant, amount, date };
+    }
+
+    // Convert various date formats to YYYY-MM-DD
+    function convertToISODate(dateStr) {
+        try {
+            const parsed = new Date(dateStr);
+            if (!isNaN(parsed.getTime())) {
+                const year = parsed.getFullYear();
+                const month = String(parsed.getMonth() + 1).padStart(2, '0');
+                const day = String(parsed.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        } catch (e) {
+            console.error('Date parsing error:', e);
+        }
+        return '';
     }
 
     function displayPreviews() {
@@ -123,11 +293,30 @@
     async function handleFormSubmit(e) {
         e.preventDefault();
 
-        const merchantName = document.getElementById('merchant-name').value;
+        const merchantName = document.getElementById('merchant-name').value.trim();
         const amount = parseFloat(document.getElementById('amount').value);
         const receiptDate = document.getElementById('receipt-date').value;
         const isBusiness = document.getElementById('is-business').value === 'true';
         const notes = document.getElementById('notes').value;
+
+        // Validate required fields
+        if (!merchantName) {
+            showMessage('Please enter the merchant name', 'error');
+            document.getElementById('merchant-name').focus();
+            return;
+        }
+
+        if (!amount || amount <= 0) {
+            showMessage('Please enter a valid amount', 'error');
+            document.getElementById('amount').focus();
+            return;
+        }
+
+        if (!receiptDate) {
+            showMessage('Please select the receipt date', 'error');
+            document.getElementById('receipt-date').focus();
+            return;
+        }
 
         const submitBtn = e.target.querySelector('button[type="submit"]');
         submitBtn.disabled = true;

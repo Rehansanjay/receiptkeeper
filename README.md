@@ -1,4 +1,4 @@
-# ReceiptKeeper
+# Reciptera
 
 A web application for managing business receipts and generating tax-ready packages.
 
@@ -13,7 +13,7 @@ A web application for managing business receipts and generating tax-ready packag
 ## Project Structure
 
 ```
-receiptkeeper/
+reciptera/
 ├── public/
 │   ├── css/
 │   │   └── style.css
@@ -46,7 +46,7 @@ Make sure you have the following installed:
 
 1. Go to https://supabase.com
 2. Sign up/log in and create a new project
-3. Name it "receiptkeeper"
+3. Name it "reciptera"
 4. Choose a database password and region (US-East recommended)
 5. Save your Project URL and Anon Key
 
@@ -97,4 +97,4 @@ $99/year for unlimited receipt storage and tax package generation.
 
 ## License
 
-All rights reserved © 2026 ReceiptKeeper
+All rights reserved © 2026 Reciptera

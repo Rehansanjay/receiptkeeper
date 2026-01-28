@@ -1,12 +1,17 @@
 {
-  "name": "receiptkeeper",
+  "name": "reciptera",
   "version": "1.0.0",
   "description": "Receipt management application for freelancers and small business owners",
   "scripts": {
     "dev": "npx http-server public -p 8000 -o",
     "start": "npx http-server public -p 8000"
   },
-  "keywords": ["receipts", "taxes", "accounting", "business"],
+  "keywords": [
+    "receipts",
+    "taxes",
+    "accounting",
+    "business"
+  ],
   "author": "",
   "license": "ISC"
 }

@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#4F46E5">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ReceiptKeeper - Never Lose a Business Receipt Again</title>
+    <title>Reciptera - Never Lose a Business Receipt Again</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
@@ -23,7 +23,7 @@
 <body>
     <nav>
         <div class="container">
-            <div class="logo">ReceiptKeeper</div>
+            <div class="logo">Reciptera</div>
             <div class="nav-links" id="nav-links">
                 <a href="/signup.html">Sign Up</a>
                 <a href="/login.html">Log In</a>
@@ -104,7 +104,7 @@
             <h2>Early Access Program</h2>
             <div class="early-access-box">
                 <h3>Be Our First Success Story</h3>
-                <p>ReceiptKeeper is launching for the 2026 tax season. Join our early adopter program and help shape the
+                <p>Reciptera is launching for the 2026 tax season. Join our early adopter program and help shape the
                     future of receipt organization for freelancers.</p>
                 <div class="early-benefits">
                     <div class="benefit-item">
@@ -144,7 +144,7 @@
 
                 <div class="price-card featured">
                     <div class="popular-badge">Early Adopter Special</div>
-                    <h3>ReceiptKeeper Annual</h3>
+                    <h3>Reciptera Annual</h3>
                     <div class="price-breakdown">
                         <div class="price">$29<span>/year</span></div>
                         <p class="price-detail">Just $2.42/month — Lock in this price forever</p>
@@ -197,7 +197,7 @@
                 <div class="faq-item">
                     <h3>What if I get audited by the IRS?</h3>
                     <p>You're covered. Our system keeps receipts for 7 years (IRS requirement) and exports them in
-                        audit-ready format. Several users have successfully used ReceiptKeeper during audits.</p>
+                        audit-ready format. Several users have successfully used Reciptera during audits.</p>
                 </div>
                 <div class="faq-item">
                     <h3>Can I cancel anytime?</h3>
@@ -216,7 +216,7 @@
                 </div>
                 <div class="faq-item">
                     <h3>Is this for businesses or individuals?</h3>
-                    <p>ReceiptKeeper is designed for US freelancers, contractors, and self-employed individuals who file
+                    <p>Reciptera is designed for US freelancers, contractors, and self-employed individuals who file
                         Schedule C. Not for corporations or complex business accounting.</p>
                 </div>
             </div>
@@ -234,7 +234,7 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2026 ReceiptKeeper. All rights reserved.</p>
+            <p>&copy; 2026 Reciptera. All rights reserved.</p>
             <p style="margin-top: 0.5rem; font-size: 0.875rem;">We never sell your data • <a
                     href="/privacy.html">Privacy Policy</a> • <a href="/terms.html">Terms of Service</a></p>
         </div>
@@ -243,7 +243,7 @@
     <script src="/js/config.js"></script>
     <script>
         // Check if user is logged in and update navigation
-        ReceiptKeeper.getSession().then(function (session) {
+        Reciptera.getSession().then(function (session) {
             if (session) {
                 const navLinks = document.getElementById('nav-links');
                 navLinks.innerHTML = `
@@ -253,7 +253,7 @@
 
                 document.getElementById('logout-btn').addEventListener('click', async function (e) {
                     e.preventDefault();
-                    await ReceiptKeeper.signOut();
+                    await Reciptera.signOut();
                     window.location.reload();
                 });
             }

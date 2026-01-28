@@ -1,9 +1,9 @@
-// Dashboard - Uses centralized ReceiptKeeper config
+// Dashboard - Uses centralized Reciptera config
 (function () {
     'use strict';
 
-    const supabase = ReceiptKeeper.supabase;
-    const log = ReceiptKeeper.log;
+    const supabase = Reciptera.supabase;
+    const log = Reciptera.log;
 
     let allReceipts = [];
     let currentUser = null;
@@ -13,7 +13,7 @@
         log.info('Dashboard loading...');
 
         // Check authentication
-        const session = await ReceiptKeeper.getSession();
+        const session = await Reciptera.getSession();
         if (!session) {
             log.error('No session found, redirecting to login');
             window.location.href = '/login.html';
@@ -216,7 +216,7 @@
         document.getElementById('logout-btn').addEventListener('click', async function (e) {
             e.preventDefault();
             log.info('Logging out...');
-            await ReceiptKeeper.signOut();
+            await Reciptera.signOut();
             window.location.href = '/';
         });
     }

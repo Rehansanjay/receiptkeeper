@@ -1,5 +1,5 @@
 /**
- * ReceiptKeeper - Supabase Configuration
+ * Reciptera - Supabase Configuration
  * Centralized configuration to prevent redeclaration errors
  */
 
@@ -7,8 +7,8 @@
     'use strict';
 
     // Prevent multiple initializations
-    if (window.ReceiptKeeper) {
-        console.log('ReceiptKeeper already initialized');
+    if (window.Reciptera) {
+        console.log('Reciptera already initialized');
         return;
     }
 
@@ -27,8 +27,8 @@
     // Create single Supabase client
     const supabaseClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
 
-    // Global ReceiptKeeper object
-    window.ReceiptKeeper = {
+    // Global Reciptera object
+    window.Reciptera = {
         supabase: supabaseClient,
         config: CONFIG,
 
@@ -56,6 +56,6 @@
         }
     };
 
-    console.log('✅ ReceiptKeeper initialized');
+    console.log('✅ Reciptera initialized');
 
 })();

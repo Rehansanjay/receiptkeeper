@@ -5,10 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#4F46E5">
-    <title>Upload Receipt - ReceiptKeeper</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Upload Receipt - Reciptera</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/mobile-enhancements.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
         .upload-container {
             max-width: 800px;
@@ -123,13 +128,91 @@
         .btn-secondary:hover {
             background: #4b5563;
         }
+
+        /* OCR Loading Indicator */
+        .ocr-loading {
+            display: none;
+            background: #EEF2FF;
+            border: 2px solid #4F46E5;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .ocr-loading.active {
+            display: block;
+        }
+
+        .ocr-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #E0E7FF;
+            border-top-color: #4F46E5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .ocr-progress {
+            margin-top: 1rem;
+        }
+
+        .ocr-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #E0E7FF;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .ocr-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4F46E5, #7C3AED);
+            transition: width 0.3s;
+            border-radius: 4px;
+        }
+
+        .ocr-status {
+            font-size: 0.9rem;
+            color: #4F46E5;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        /* Auto-filled indicator */
+        .auto-filled {
+            position: relative;
+        }
+
+        .auto-filled::after {
+            content: '🤖 Auto-detected';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: #059669;
+            background: #D1FAE5;
+            padding: 2px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
     </style>
 </head>
 
 <body>
     <nav>
         <div class="container">
-            <div class="logo"><a href="/" style="color: white; text-decoration: none;">ReceiptKeeper</a></div>
+            <div class="logo"><a href="/" style="color: white; text-decoration: none;">Reciptera</a></div>
             <div class="nav-links">
                 <a href="/dashboard.html">Dashboard</a>
                 <a href="#" id="logout-btn">Log Out</a>
@@ -140,7 +223,7 @@
     <div class="upload-container">
         <div class="upload-card">
             <h1>Upload Receipt</h1>
-            <p>Upload photos or PDF files of your business receipts</p>
+            <p>📸 Upload a photo and we'll automatically extract the merchant name, amount, and date using AI!</p>
 
             <div class="upload-area" id="upload-area">
                 <div class="upload-icon">📤</div>
@@ -151,23 +234,36 @@
 
             <div class="preview-container" id="preview-container"></div>
 
-            <form id="receipt-form" class="metadata-form" style="display: none;">
+            <!-- OCR Loading Indicator -->
+            <div class="ocr-loading" id="ocr-loading">
+                <div class="ocr-spinner"></div>
+                <h3>🔍 Reading Receipt...</h3>
+                <p>Extracting merchant name, amount, and date</p>
+                <div class="ocr-progress">
+                    <div class="ocr-progress-bar">
+                        <div class="ocr-progress-fill" id="ocr-progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="ocr-status" id="ocr-status">Initializing OCR...</div>
+                </div>
+            </div>
+
+            <form id="receipt-form" class="metadata-form" style="display: none;" novalidate>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="merchant-name">Merchant Name</label>
-                        <input type="text" id="merchant-name" required>
+                        <input type="text" id="merchant-name" placeholder="e.g., Starbucks, Walmart">
                     </div>
 
                     <div class="form-group">
                         <label for="amount">Amount ($)</label>
-                        <input type="number" id="amount" step="0.01" required>
+                        <input type="number" id="amount" step="0.01" placeholder="0.00">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="receipt-date">Receipt Date</label>
-                        <input type="date" id="receipt-date" required>
+                        <input type="date" id="receipt-date">
                     </div>
 
                     <div class="form-group">
