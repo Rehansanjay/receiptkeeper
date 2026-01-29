@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Pricing - Reciptera</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/mobile-enhancements.css">
+    <link rel="stylesheet" href="/css/premium-enhancements.css">
+    <link rel="stylesheet" href="/css/conversion-styles.css">
+    <link rel="stylesheet" href="/css/early-access-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body style="background: #F9FAFB;">
+    <nav>
+        <div class="container">
+            <div class="logo"><a href="/" style="color: white; text-decoration: none;">Reciptera</a></div>
+            <div class="nav-links" id="nav-links">
+                <a href="/pricing.html" class="active">Pricing</a>
+                <a href="/signup.html">Sign Up</a>
+                <a href="/login.html">Log In</a>
+            </div>
+        </div>
+    </nav>
+
+    <div style="padding-top: 4rem;">
+        <section class="pricing-section" id="pricing">
+            <div class="container">
+                <div style="text-align: center; margin-bottom: 3rem;">
+                    <h1 style="font-size: 2.5rem; font-weight: 800; color: #111827; margin-bottom: 1rem;">Simple,
+                        Transparent Pricing</h1>
+                    <p style="font-size: 1.25rem; color: #6B7280;">Choose the plan that fits your workflow.</p>
+                </div>
+
+                <div class="pricing-comparison">
+                    <div class="comparison-item faded">
+                        <h4>Free Trial</h4>
+                        <div class="comparison-price">$0</div>
+                        <ul class="comparison-list">
+                            <li>✓ 14 Days Unlimited Access</li>
+                            <li>✓ Receipt Scanning</li>
+                            <li>✓ Export Data</li>
+                            <li class="negative">❌ Cloud Backup after 14 days</li>
+                        </ul>
+                        <a href="/signup.html" class="cta-button secondary"
+                            style="margin-top: 1rem; width: 100%; display: block; text-align: center;">Start Trial</a>
+                    </div>
+
+                    <div class="price-card featured">
+                        <div class="popular-badge">Best Value</div>
+                        <h3>Pro Annual</h3>
+                        <div class="price-breakdown">
+                            <div class="price">$29<span>/year</span></div>
+                            <p class="price-detail">Equal to $2.42/month</p>
+                        </div>
+                        <div class="roi-highlight">
+                            <strong>Lock in this price forever</strong>
+                        </div>
+                        <ul>
+                            <li>✓ Unlimited receipt storage</li>
+                            <li>✓ Smart AI Data Extraction</li>
+                            <li>✓ 7-year IRS-ready backup</li>
+                            <li>✓ One-click CSV/PDF Exports</li>
+                            <li>✓ Priority Support</li>
+                        </ul>
+                        <a href="/signup.html" class="cta-button primary"
+                            style="width: 100%; display: block; text-align: center;">Get Started</a>
+                        <p class="guarantee">30-day money-back guarantee</p>
+                    </div>
+
+                    <div class="comparison-item faded">
+                        <h4>Enterprise</h4>
+                        <div class="comparison-price">Custom</div>
+                        <ul class="comparison-list">
+                            <li>✓ Multi-user seats</li>
+                            <li>✓ Custom Integrations</li>
+                            <li>✓ API Access</li>
+                            <li>✓ Dedicated Account Manager</li>
+                        </ul>
+                        <a href="mailto:sales@reciptera.com" class="cta-button secondary"
+                            style="margin-top: 1rem; width: 100%; display: block; text-align: center;">Contact Sales</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="faq-section" style="background: white;">
+            <div class="container">
+                <h2>Frequently Asked Questions</h2>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <h3>What happens after my trial?</h3>
+                        <p>We'll email you before your trial ends. You can choose to upgrade to the Pro plan or your
+                            account will switch to read-only mode.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>Can I cancel anytime?</h3>
+                        <p>Yes, you can cancel your subscription from your dashboard at any time. You'll keep access
+                            until the end of your billing period.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>Is it secure?</h3>
+                        <p>We use bank-level encryption (AES-256) to store your data and Stripe for secure payment
+                            processing. We never sell your data.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Reciptera. All rights reserved.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.875rem;"><a href="/privacy.html">Privacy</a> • <a
+                    href="/terms.html">Terms</a></p>
+        </div>
+    </footer>
+
+    <script src="/js/config.js"></script>
+    <script>
+        // Check session to update nav
+        async function checkSession() {
+            const sb = window.supabase.createClient('https://hiscskqwlgavicihsote.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpc2Nza3F3bGdhdmljaWhzb3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDc2MDMsImV4cCI6MjA4NDk4MzYwM30.Acu9LBOgIa_kLlm4gcDb06Dw8cwxnYxeyr_gI7PweL8');
+            const { data: { session } } = await sb.auth.getSession();
+            if (session) {
+                const navLinks = document.getElementById('nav-links');
+                navLinks.innerHTML = `
+                    <a href="/dashboard.html">Dashboard</a>
+                    <a href="/pricing.html" class="active">Pricing</a>
+                    <a href="#" id="logout-btn">Log Out</a>
+                `;
+                document.getElementById('logout-btn').addEventListener('click', async function (e) {
+                    e.preventDefault();
+                    await sb.auth.signOut();
+                    window.location.href = '/';
+                });
+            }
+        }
+        checkSession();
+    </script>
+</body>
+
+</html>

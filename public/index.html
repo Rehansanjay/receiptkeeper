@@ -25,212 +25,302 @@
         <div class="container">
             <div class="logo">Reciptera</div>
             <div class="nav-links" id="nav-links">
+                <a href="/pricing.html">Pricing</a>
                 <a href="/signup.html">Sign Up</a>
                 <a href="/login.html">Log In</a>
             </div>
         </div>
     </nav>
 
-    <section class="hero">
-        <div class="container">
-            <div class="hero-badge">Built for US Freelancers & 1099 Contractors</div>
-            <h1>Stop Dreading<br>Tax Season</h1>
-            <p class="hero-subtitle">Snap receipts all year. Export tax-ready packages in 60 seconds.<br>Save hours
-                organizing receipts for your CPA. IRS-audit ready.</p>
-            <div class="cta-group">
-                <a href="/signup.html" class="cta-button primary">Start Free 14-Day Trial</a>
-                <p class="cta-note">No credit card required • Cancel anytime • 30-day money-back guarantee</p>
-            </div>
-            <div class="features">
-                <div class="feature">
-                    <span class="feature-icon">⚡</span>
-                    <span class="feature-text">Set up in 2 minutes</span>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">🔒</span>
-                    <span class="feature-text">Bank-level encryption</span>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">✅</span>
-                    <span class="feature-text">CPA-ready exports</span>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- LOGGED IN VIEW (Premium Workspace) -->
+    <div id="logged-in-view" style="display: none; min-height: 80vh; background: #F3F4F6;">
 
-    <section class="stats-banner">
-        <div class="container">
-            <div class="stat-item">
-                <div class="stat-number">Simple</div>
-                <div class="stat-label">Upload in seconds</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">Secure</div>
-                <div class="stat-label">Bank-level encryption</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">Ready</div>
-                <div class="stat-label">Export for taxes instantly</div>
-            </div>
-        </div>
-    </section>
+        <!-- Premium Nav Spacer -->
+        <div style="height: 1px;"></div>
 
-    <section class="how-it-works">
-        <div class="container">
-            <h2>How It Works</h2>
-            <p class="section-subtitle">Three simple steps to stress-free tax season</p>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Snap & Go</h3>
-                    <p>Take a photo or forward email receipts as they come. Takes 5 seconds per receipt.</p>
+        <!-- Workspace Container -->
+        <div class="container" style="max-width: 900px; padding-top: 3rem; padding-bottom: 3rem;">
+
+            <!-- Welcome Header -->
+            <div style="display: flex; justify-content: space-between; align-items: end; margin-bottom: 2.5rem;">
+                <div>
+                    <div
+                        style="font-size: 0.9rem; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                        My Workspace</div>
+                    <h1 id="user-greeting" style="font-size: 2.5rem; color: #111827; margin: 0; line-height: 1.1;">Good
+                        Day.</h1>
                 </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>We Auto-Organize</h3>
-                    <p>Receipts automatically organized by date and amount. Search anything instantly.</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Export in 60 Seconds</h3>
-                    <p>One click generates PDF summary, CSV spreadsheet, and all images. Ready for your CPA or IRS.</p>
+                <div style="text-align: right; display: none;">
+                    <span style="font-size: 0.9rem; color: #6B7280;" id="current-date">Today</span>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <section class="testimonials">
-        <div class="container">
-            <h2>Early Access Program</h2>
-            <div class="early-access-box">
-                <h3>Be Our First Success Story</h3>
-                <p>Reciptera is launching for the 2026 tax season. Join our early adopter program and help shape the
-                    future of receipt organization for freelancers.</p>
-                <div class="early-benefits">
-                    <div class="benefit-item">
-                        <span class="benefit-icon">🎯</span>
-                        <span class="benefit-text">Lock in $29/year pricing forever</span>
+            <!-- Main Action Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+
+                <!-- Primary Action: Upload -->
+                <div onclick="window.location.href='/upload.html'"
+                    style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); border-radius: 20px; padding: 40px; color: white; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.3); grid-column: 1 / -1;">
+
+                    <!-- Decorative Circle -->
+                    <div
+                        style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%;">
                     </div>
-                    <div class="benefit-item">
-                        <span class="benefit-icon">🚀</span>
-                        <span class="benefit-text">Priority feature requests</span>
-                    </div>
-                    <div class="benefit-item">
-                        <span class="benefit-icon">💬</span>
-                        <span class="benefit-text">Direct access to founders</span>
+
+                    <div
+                        style="position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+                        <div>
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">📷</div>
+                            <h2 style="font-size: 1.75rem; margin-bottom: 0.5rem; font-weight: 700;">Scan A Receipt</h2>
+                            <p style="font-size: 1.1rem; opacity: 0.9; max-width: 300px;">Capture your expenses
+                                instantly. AI-powered extraction included.</p>
+                        </div>
+                        <div
+                            style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(255,255,255,0.3);">
+                            Upload Now <span style="margin-left: 6px;">→</span>
+                        </div>
                     </div>
                 </div>
-                <p class="early-note">Limited to first 100 users • Regular price will be $49/year</p>
-            </div>
-        </div>
-    </section>
 
-    <section class="pricing-section">
-        <div class="container">
-            <h2>Early Adopter Pricing</h2>
-            <p class="section-subtitle">Lock in lifetime pricing as a founding user</p>
-
-            <div class="pricing-comparison">
-                <div class="comparison-item faded">
-                    <h4>Disorganized Receipts</h4>
-                    <div class="comparison-price">$0</div>
-                    <ul class="comparison-list">
-                        <li class="negative">❌ Hours sorting at tax time</li>
-                        <li class="negative">❌ CPA cleanup fees</li>
-                        <li class="negative">❌ Missed deductions</li>
-                        <li class="negative">❌ Audit stress</li>
-                    </ul>
+                <!-- Dashboard Link -->
+                <div onclick="window.location.href='/dashboard.html'"
+                    style="background: white; border-radius: 20px; padding: 24px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: center; min-height: 160px;">
+                    <div
+                        style="font-size: 2rem; margin-bottom: 0.5rem; background: #EEF2FF; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #4F46E5;">
+                        📊</div>
+                    <h3 style="font-size: 1.1rem; color: #111827; font-weight: 600; margin-bottom: 0.25rem;">View
+                        Dashboard</h3>
+                    <p style="font-size: 0.9rem; color: #6B7280;">Check your monthly spending.</p>
                 </div>
 
-                <div class="price-card featured">
-                    <div class="popular-badge">Early Adopter Special</div>
-                    <h3>Reciptera Annual</h3>
-                    <div class="price-breakdown">
-                        <div class="price">$29<span>/year</span></div>
-                        <p class="price-detail">Just $2.42/month — Lock in this price forever</p>
+                <!-- Export Link -->
+                <div onclick="window.location.href='/dashboard.html'"
+                    style="background: white; border-radius: 20px; padding: 24px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: center; min-height: 160px;">
+                    <div
+                        style="font-size: 2rem; margin-bottom: 0.5rem; background: #ECFDF5; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
+                        📥</div>
+                    <h3 style="font-size: 1.1rem; color: #111827; font-weight: 600; margin-bottom: 0.25rem;">Tax Export
+                    </h3>
+                    <p style="font-size: 0.9rem; color: #6B7280;">Download reports for your CPA.</p>
+                </div>
+
+            </div>
+
+            <!-- "Did You Know" Footer -->
+            <div style="margin-top: 3rem; text-align: center; border-top: 1px solid #E5E7EB; padding-top: 1.5rem;">
+                <p style="color: #9CA3AF; font-size: 0.8rem;">🔒 Your financial data is encrypted and secure.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MARKETING VIEW (Hidden by Default to prevent flash) -->
+    <div id="marketing-view" style="display: none;">
+        <section id="marketing-hero" class="hero">
+            <div class="container">
+                <div class="hero-badge">Built for US Freelancers & 1099 Contractors</div>
+                <h1>Stop Dreading<br>Tax Season</h1>
+                <p class="hero-subtitle">Snap receipts all year. Export tax-ready packages in 60 seconds.<br>Save hours
+                    organizing receipts for your CPA. IRS-audit ready.</p>
+                <div class="cta-group">
+                    <a href="/signup.html" class="cta-button primary">Start Free 14-Day Trial</a>
+                    <p class="cta-note">No credit card required • Cancel anytime • 30-day money-back guarantee</p>
+                </div>
+                <div class="features">
+                    <div class="feature">
+                        <span class="feature-icon">⚡</span>
+                        <span class="feature-text">Set up in 2 minutes</span>
                     </div>
-                    <div class="roi-highlight">
-                        <strong>First 100 users only</strong> • Regular price $49/year
+                    <div class="feature">
+                        <span class="feature-icon">🔒</span>
+                        <span class="feature-text">Bank-level encryption</span>
                     </div>
-                    <ul>
-                        <li>✓ Unlimited receipt storage</li>
-                        <li>✓ Mobile upload (iOS & Android)</li>
-                        <li>✓ Instant search & filtering</li>
-                        <li>✓ One-click CSV export</li>
-                        <li>✓ 7-year secure cloud backup</li>
-                        <li>✓ IRS-compliant format</li>
-                        <li>✓ Schedule C ready</li>
-                        <li>✓ Email support</li>
-                    </ul>
-                    <a href="/signup.html" class="cta-button">Start 14-Day Free Trial</a>
-                    <p class="guarantee">✓ 30-day money-back guarantee • No credit card for trial</p>
-                </div>
-
-                <div class="comparison-item faded">
-                    <h4>Enterprise Tools</h4>
-                    <div class="comparison-price">$15-30<span>/mo</span></div>
-                    <ul class="comparison-list">
-                        <li class="negative">❌ $180-360/year</li>
-                        <li class="negative">❌ Complex features</li>
-                        <li class="negative">❌ Expensive add-ons</li>
-                        <li>✓ Receipt storage</li>
-                    </ul>
+                    <div class="feature">
+                        <span class="feature-icon">✅</span>
+                        <span class="feature-text">CPA-ready exports</span>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="faq-section">
-        <div class="container">
-            <h2>Frequently Asked Questions</h2>
-            <div class="faq-grid">
-                <div class="faq-item">
-                    <h3>Will my CPA/accountant accept this?</h3>
-                    <p>Absolutely! Our export format (PDF summary + CSV + original images) is exactly what CPAs request.
-                        Many accountants actually recommend us to their clients.</p>
+        <section class="stats-banner">
+            <div class="container">
+                <div class="stat-item">
+                    <div class="stat-number">Simple</div>
+                    <div class="stat-label">Upload in seconds</div>
                 </div>
-                <div class="faq-item">
-                    <h3>Is my financial data secure?</h3>
-                    <p>Yes. We use bank-level 256-bit encryption, secure cloud storage, and never sell your data. Your
-                        receipts are backed up automatically and accessible only to you.</p>
+                <div class="stat-item">
+                    <div class="stat-number">Secure</div>
+                    <div class="stat-label">Bank-level encryption</div>
                 </div>
-                <div class="faq-item">
-                    <h3>What if I get audited by the IRS?</h3>
-                    <p>You're covered. Our system keeps receipts for 7 years (IRS requirement) and exports them in
-                        audit-ready format. Several users have successfully used Reciptera during audits.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>Can I cancel anytime?</h3>
-                    <p>Yes, cancel with one click. No questions asked. Plus, we offer a 30-day money-back guarantee if
-                        you're not satisfied.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>Do you integrate with QuickBooks or Xero?</h3>
-                    <p>Our CSV export works seamlessly with QuickBooks, Xero, FreshBooks, and any accounting software.
-                        Direct integrations coming soon.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>What happens after the 14-day trial?</h3>
-                    <p>We'll send you a reminder email. If you love it, you'll be charged $29/year (early adopter
-                        price). If not, no charge. Your data stays safe for 30 days if you want to return.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>Is this for businesses or individuals?</h3>
-                    <p>Reciptera is designed for US freelancers, contractors, and self-employed individuals who file
-                        Schedule C. Not for corporations or complex business accounting.</p>
+                <div class="stat-item">
+                    <div class="stat-number">Ready</div>
+                    <div class="stat-label">Export for taxes instantly</div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="final-cta">
-        <div class="container">
-            <h2>Ready to Stop Stressing About Receipts?</h2>
-            <p>Join freelancers who are getting tax-ready the easy way.</p>
-            <a href="/signup.html" class="cta-button large">Start Your Free Trial Now</a>
-            <p class="cta-subtext">Setup takes 2 minutes • No credit card required • Cancel anytime</p>
-        </div>
-    </section>
+        <section class="how-it-works">
+            <div class="container">
+                <h2>How It Works</h2>
+                <p class="section-subtitle">Three simple steps to stress-free tax season</p>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Snap & Go</h3>
+                        <p>Take a photo or forward email receipts as they come. Takes 5 seconds per receipt.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>We Auto-Organize</h3>
+                        <p>Receipts automatically organized by date and amount. Search anything instantly.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Export in 60 Seconds</h3>
+                        <p>One click generates PDF summary, CSV spreadsheet, and all images. Ready for your CPA or IRS.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="testimonials">
+            <div class="container">
+                <h2>Early Access Program</h2>
+                <div class="early-access-box">
+                    <h3>Be Our First Success Story</h3>
+                    <p>Reciptera is launching for the 2026 tax season. Join our early adopter program and help shape the
+                        future of receipt organization for freelancers.</p>
+                    <div class="early-benefits">
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🎯</span>
+                            <span class="benefit-text">Lock in $29/year pricing forever</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🚀</span>
+                            <span class="benefit-text">Priority feature requests</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">💬</span>
+                            <span class="benefit-text">Direct access to founders</span>
+                        </div>
+                    </div>
+                    <p class="early-note">Limited to first 100 users • Regular price will be $49/year</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pricing-section" id="pricing">
+            <div class="container">
+                <h2>Early Adopter Pricing</h2>
+                <p class="section-subtitle">Lock in lifetime pricing as a founding user</p>
+
+                <div class="pricing-comparison">
+                    <div class="comparison-item faded">
+                        <h4>Disorganized Receipts</h4>
+                        <div class="comparison-price">$0</div>
+                        <ul class="comparison-list">
+                            <li class="negative">❌ Hours sorting at tax time</li>
+                            <li class="negative">❌ CPA cleanup fees</li>
+                            <li class="negative">❌ Missed deductions</li>
+                            <li class="negative">❌ Audit stress</li>
+                        </ul>
+                    </div>
+
+                    <div class="price-card featured">
+                        <div class="popular-badge">Early Adopter Special</div>
+                        <h3>Reciptera Annual</h3>
+                        <div class="price-breakdown">
+                            <div class="price">$29<span>/year</span></div>
+                            <p class="price-detail">Just $2.42/month — Lock in this price forever</p>
+                        </div>
+                        <div class="roi-highlight">
+                            <strong>First 100 users only</strong> • Regular price $49/year
+                        </div>
+                        <ul>
+                            <li>✓ Unlimited receipt storage</li>
+                            <li>✓ Mobile upload (iOS & Android)</li>
+                            <li>✓ Instant search & filtering</li>
+                            <li>✓ One-click CSV export</li>
+                            <li>✓ 7-year secure cloud backup</li>
+                            <li>✓ IRS-compliant format</li>
+                            <li>✓ Schedule C ready</li>
+                            <li>✓ Email support</li>
+                        </ul>
+                        <a href="/signup.html" class="cta-button">Start 14-Day Free Trial</a>
+                        <p class="guarantee">✓ 30-day money-back guarantee • No credit card for trial</p>
+                    </div>
+
+                    <div class="comparison-item faded">
+                        <h4>Enterprise Tools</h4>
+                        <div class="comparison-price">$15-30<span>/mo</span></div>
+                        <ul class="comparison-list">
+                            <li class="negative">❌ $180-360/year</li>
+                            <li class="negative">❌ Complex features</li>
+                            <li class="negative">❌ Expensive add-ons</li>
+                            <li>✓ Receipt storage</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="faq-section">
+            <div class="container">
+                <h2>Frequently Asked Questions</h2>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <h3>Will my CPA/accountant accept this?</h3>
+                        <p>Absolutely! Our export format (PDF summary + CSV + original images) is exactly what CPAs
+                            request.
+                            Many accountants actually recommend us to their clients.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>Is my financial data secure?</h3>
+                        <p>Yes. We use bank-level 256-bit encryption, secure cloud storage, and never sell your data.
+                            Your
+                            receipts are backed up automatically and accessible only to you.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>What if I get audited by the IRS?</h3>
+                        <p>You're covered. Our system keeps receipts for 7 years (IRS requirement) and exports them in
+                            audit-ready format. Several users have successfully used Reciptera during audits.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>Can I cancel anytime?</h3>
+                        <p>Yes, cancel with one click. No questions asked. Plus, we offer a 30-day money-back guarantee
+                            if
+                            you're not satisfied.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>Do you integrate with QuickBooks or Xero?</h3>
+                        <p>Our CSV export works seamlessly with QuickBooks, Xero, FreshBooks, and any accounting
+                            software.
+                            Direct integrations coming soon.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>What happens after the 14-day trial?</h3>
+                        <p>We'll send you a reminder email. If you love it, you'll be charged $29/year (early adopter
+                            price). If not, no charge. Your data stays safe for 30 days if you want to return.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3>Is this for businesses or individuals?</h3>
+                        <p>Reciptera is designed for US freelancers, contractors, and self-employed individuals who file
+                            Schedule C. Not for corporations or complex business accounting.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="final-cta">
+            <div class="container">
+                <h2>Ready to Stop Stressing About Receipts?</h2>
+                <p>Join freelancers who are getting tax-ready the easy way.</p>
+                <a href="/signup.html" class="cta-button large">Start Your Free Trial Now</a>
+                <p class="cta-subtext">Setup takes 2 minutes • No credit card required • Cancel anytime</p>
+            </div>
+        </section>
+    </div> <!-- END MARKETING VIEW -->
 
     <footer>
         <div class="container">
@@ -242,22 +332,91 @@
 
     <script src="/js/config.js"></script>
     <script>
-        // Check if user is logged in and update navigation
-        Reciptera.getSession().then(function (session) {
-            if (session) {
-                const navLinks = document.getElementById('nav-links');
-                navLinks.innerHTML = `
-                    <a href="/dashboard.html">Dashboard</a>
-                    <a href="#" id="logout-btn">Log Out</a>
-                `;
+        // Check if user is logged in using Supabase directly to ensure reliability
+        async function checkSession() {
+            try {
+                // Initialize Supabase if not already done via config.js
+                // We use the window.supabase instance created by CDN script in head
+                const sb = window.supabase.createClient('https://hiscskqwlgavicihsote.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpc2Nza3F3bGdhdmljaWhzb3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDc2MDMsImV4cCI6MjA4NDk4MzYwM30.Acu9LBOgIa_kLlm4gcDb06Dw8cwxnYxeyr_gI7PweL8');
 
-                document.getElementById('logout-btn').addEventListener('click', async function (e) {
-                    e.preventDefault();
-                    await Reciptera.signOut();
-                    window.location.reload();
-                });
+                const { data: { session } } = await sb.auth.getSession();
+
+                // Elements
+                const marketingView = document.getElementById('marketing-view');
+                const loggedInView = document.getElementById('logged-in-view');
+
+                if (session) {
+                    // USER IS LOGGED IN
+                    console.log('✅ User is logged in:', session.user.email);
+
+                    // 1. Update Navigation
+                    const navLinks = document.getElementById('nav-links');
+                    navLinks.innerHTML = `
+                        <a href="/dashboard.html">Dashboard</a>
+                        <a href="/pricing.html">Pricing</a>
+                        <a href="#" id="logout-btn">Log Out</a>
+                    `;
+
+                    // 2. Switch Views (Use flex to ensure layout holds)
+                    marketingView.style.display = 'none';
+                    loggedInView.style.display = 'block';
+
+                    // 3. Update Greeting & Date
+                    const emailName = session.user.email.split('@')[0];
+                    const displayName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+
+                    // Time based greeting
+                    const hour = new Date().getHours();
+                    let greeting = 'Good Day';
+                    if (hour < 12) greeting = 'Good Morning';
+                    else if (hour < 18) greeting = 'Good Afternoon';
+                    else greeting = 'Good Evening';
+
+                    document.getElementById('user-greeting').textContent = `${greeting}, ${displayName}.`;
+
+                    // Set Date
+                    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    const today = new Date().toLocaleDateString('en-US', options);
+                    try {
+                        const dateEl = document.getElementById('current-date');
+                        if (dateEl) {
+                            dateEl.textContent = today;
+                            dateEl.parentElement.style.display = 'block';
+                        }
+                    } catch (e) { }
+
+                    // 4. Setup Logout Listener
+                    document.getElementById('logout-btn').addEventListener('click', async function (e) {
+                        e.preventDefault();
+                        await sb.auth.signOut();
+                        window.location.reload();
+                    });
+
+                } else {
+                    // USER IS LOGGED OUT
+                    console.log('ℹ️ User is not logged in');
+                    // Show marketing view (hidden by default)
+                    marketingView.style.display = 'block';
+                    loggedInView.style.display = 'none';
+
+                    const navLinks = document.getElementById('nav-links');
+                    if (navLinks) {
+                        navLinks.innerHTML = `
+                            <a href="/pricing.html">Pricing</a>
+                            <a href="/signup.html">Sign Up</a>
+                            <a href="/login.html">Log In</a>
+                        `;
+                    }
+                }
+
+            } catch (err) {
+                console.error("Session check error:", err);
+                document.getElementById('marketing-view').style.display = 'block';
             }
-        });
+        }
+
+        // Run immediately
+        checkSession();
     </script>
 </body>
 

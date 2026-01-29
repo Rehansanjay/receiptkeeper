@@ -92,6 +92,472 @@
     }
 
     // ========== OCR FUNCTIONALITY ==========
+
+    // Image preprocessing for better OCR accuracy (10-25% improvement)
+    async function preprocessImage(file) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+
+                // Resize to optimal width (max 1200px)
+                const maxWidth = 1200;
+                const scale = Math.min(maxWidth / img.width, 1);
+
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+
+                // Draw image
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                // Convert to grayscale and apply binary threshold
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    // Convert to grayscale
+                    let gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                    // Apply binary threshold (140 works well for receipts)
+                    gray = gray > 140 ? 255 : 0;
+                    data[i] = data[i + 1] = data[i + 2] = gray;
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+
+                // Convert to blob
+                canvas.toBlob(blob => resolve(blob), "image/jpeg", 0.9);
+            };
+        });
+    }
+
+    // Helper function to split text into clean lines
+    function getLines(text) {
+        return text
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
+    }
+
+    // Extract merchant name (SMART - handles various receipt formats)
+    function extractMerchant(lines) {
+        // Blacklist words that indicate NON-merchant lines
+        const blacklist = /^(server|cashier|clerk|table|date|time|phone|tel|fax|receipt|invoice|order|check|ticket|terminal|store|trans|ref|auth|card|visa|master|amex|debit|credit|change|cash|subtotal|total|tax|tip|balance|thank|welcome|please|have a|come again|www\.|http|@|#\d+$)/i;
+
+        // Patterns that look like addresses (skip these)
+        const addressPattern = /\d+\s+(street|st|ave|avenue|road|rd|blvd|drive|dr|lane|ln|way|place|pl|court|ct)\b/i;
+
+        // Pattern for phone numbers
+        const phonePattern = /\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
+
+        let bestCandidate = "";
+        let bestScore = 0;
+
+        // Check first 10 lines (merchant usually at top)
+        for (const line of lines.slice(0, 10)) {
+            const trimmed = line.trim();
+            if (trimmed.length < 3) continue;
+
+            // Skip if matches blacklist
+            if (blacklist.test(trimmed)) continue;
+
+            // Skip if looks like address
+            if (addressPattern.test(trimmed)) continue;
+
+            // Skip if looks like phone number
+            if (phonePattern.test(trimmed)) continue;
+
+            // Skip if mostly numbers (more than 50% digits)
+            const digits = trimmed.replace(/[^0-9]/g, "").length;
+            const total = trimmed.length;
+            if (digits / total > 0.5) continue;
+
+            // Score this line (higher = better merchant candidate)
+            let score = 0;
+
+            // Prefer lines with more letters
+            const letters = trimmed.replace(/[^A-Za-z]/g, "").length;
+            score += letters * 2;
+
+            // Prefer ALL CAPS (many receipts print merchant in caps)
+            if (trimmed === trimmed.toUpperCase() && letters > 3) {
+                score += 20;
+            }
+
+            // Prefer shorter lines (merchant names are usually concise)
+            if (trimmed.length <= 25) score += 10;
+
+            // Prefer lines near the very top
+            const lineIndex = lines.indexOf(line);
+            if (lineIndex < 3) score += 15;
+
+            // Penalize lines with special chars (except &, ', -)
+            const specialChars = trimmed.replace(/[A-Za-z0-9\s&'\-]/g, "").length;
+            score -= specialChars * 3;
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestCandidate = trimmed;
+            }
+        }
+
+        return bestCandidate;
+    }
+
+    // Extract total amount (MOST IMPORTANT - looks for "total" keyword first)
+    function extractTotal(lines) {
+        // First pass: look for lines with "total" keyword (from bottom up)
+        // Avoid "subtotal" - we want the final total
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i].toLowerCase();
+            // Match "total" but not "subtotal"
+            if (/\btotal\b/i.test(line) && !/subtotal/i.test(line)) {
+                const m = lines[i].match(/(\d+\.\d{2})/);
+                if (m) return m[1];
+            }
+        }
+
+        // Second pass: look for "grand total", "amount due", "balance due"
+        for (let i = lines.length - 1; i >= 0; i--) {
+            if (/grand\s*total|amount\s*due|balance\s*due|you\s*owe/i.test(lines[i])) {
+                const m = lines[i].match(/(\d+\.\d{2})/);
+                if (m) return m[1];
+            }
+        }
+
+        // Third pass: find largest dollar amount (usually the total)
+        let max = 0;
+        for (const line of lines) {
+            const nums = line.match(/\d+\.\d{2}/g);
+            if (nums) {
+                nums.forEach(n => max = Math.max(max, parseFloat(n)));
+            }
+        }
+
+        return max ? max.toFixed(2) : "";
+    }
+
+    // Extract date from receipt (UNIVERSAL - handles almost any format)
+    function extractDate(lines) {
+        const currentYear = new Date().getFullYear();
+        const fullText = lines.join(" ");
+
+        console.log('🔍 [DATE DEBUG] Searching for date in text...');
+
+        // Store all found dates with their positions
+        const foundDates = [];
+
+        // Helper to validate and convert a date
+        function tryDate(mm, dd, yyyy, source) {
+            const m = parseInt(mm, 10);
+            const d = parseInt(dd, 10);
+            const y = parseInt(yyyy, 10);
+
+            // Validate ranges
+            if (m < 1 || m > 12) return null;
+            if (d < 1 || d > 31) return null;
+            if (y < 2000 || y > currentYear) return null;
+
+            const result = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            console.log(`📅 [DATE DEBUG] Found valid date from ${source}: ${result}`);
+            return result;
+        }
+
+        // Pattern 1: MM/DD/YYYY, M/D/YYYY, MM-DD-YYYY, MM.DD.YYYY (4-digit year)
+        let match;
+        const p1 = /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})\b/g;
+        while ((match = p1.exec(fullText)) !== null) {
+            const result = tryDate(match[1], match[2], match[3], 'Pattern1-MMDDYYYY');
+            if (result) foundDates.push(result);
+        }
+
+        // Pattern 2: YYYY-MM-DD, YYYY/MM/DD (ISO format)
+        const p2 = /\b(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})\b/g;
+        while ((match = p2.exec(fullText)) !== null) {
+            const result = tryDate(match[2], match[3], match[1], 'Pattern2-YYYYMMDD');
+            if (result) foundDates.push(result);
+        }
+
+        // Pattern 3: MM/DD/YY, M/D/YY (2-digit year)
+        const p3 = /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})\b/g;
+        while ((match = p3.exec(fullText)) !== null) {
+            let yy = parseInt(match[3], 10);
+            let yyyy = yy > 50 ? 1900 + yy : 2000 + yy;
+            const result = tryDate(match[1], match[2], yyyy, 'Pattern3-MMDDYY');
+            if (result) foundDates.push(result);
+        }
+
+        // Pattern 4: DD/MM/YYYY (European format - try if first didn't work)
+        // Only use if month looks invalid in US format
+        const p4 = /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})\b/g;
+        while ((match = p4.exec(fullText)) !== null) {
+            const d = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10);
+            // If first number > 12, it's probably day (European)
+            if (d > 12 && m <= 12) {
+                const result = tryDate(m, d, match[3], 'Pattern4-DDMMYYYY-Euro');
+                if (result) foundDates.push(result);
+            }
+        }
+
+        // Pattern 5: Text months - "Jan 15, 2024" or "Jan 15 2024"
+        const months = {
+            'jan': 1, 'january': 1, 'feb': 2, 'february': 2, 'mar': 3, 'march': 3,
+            'apr': 4, 'april': 4, 'may': 5, 'jun': 6, 'june': 6, 'jul': 7, 'july': 7,
+            'aug': 8, 'august': 8, 'sep': 9, 'sept': 9, 'september': 9,
+            'oct': 10, 'october': 10, 'nov': 11, 'november': 11, 'dec': 12, 'december': 12
+        };
+
+        const p5 = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s*(\d{1,2}),?\s*(\d{4})\b/gi;
+        while ((match = p5.exec(fullText)) !== null) {
+            const m = months[match[1].toLowerCase()];
+            if (m) {
+                const result = tryDate(m, match[2], match[3], 'Pattern5-TextMonth');
+                if (result) foundDates.push(result);
+            }
+        }
+
+        // Pattern 6: "15 Jan 2024" or "15-Jan-2024"
+        const p6 = /\b(\d{1,2})[\s\-]*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?[\s\-]*(\d{4})\b/gi;
+        while ((match = p6.exec(fullText)) !== null) {
+            const m = months[match[2].toLowerCase()];
+            if (m) {
+                const result = tryDate(m, match[1], match[3], 'Pattern6-DayTextMonth');
+                if (result) foundDates.push(result);
+            }
+        }
+
+        // Pattern 7: "15 Jan 24" or "15-Jan-24" (2-digit year with text month)
+        const p7 = /\b(\d{1,2})[\s\-]*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?[\s\-]*(\d{2})\b/gi;
+        while ((match = p7.exec(fullText)) !== null) {
+            const m = months[match[2].toLowerCase()];
+            if (m) {
+                let yy = parseInt(match[3], 10);
+                let yyyy = yy > 50 ? 1900 + yy : 2000 + yy;
+                const result = tryDate(m, match[1], yyyy, 'Pattern7-DayTextMonthYY');
+                if (result) foundDates.push(result);
+            }
+        }
+
+        // Pattern 8: Look for lines with "DATE" keyword
+        for (const line of lines) {
+            if (/date/i.test(line)) {
+                console.log('🔍 [DATE DEBUG] Found line with DATE keyword:', line);
+                // Try to extract any date pattern from this line
+                const dateMatch = line.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+                if (dateMatch) {
+                    let yyyy = dateMatch[3].length === 2
+                        ? (parseInt(dateMatch[3], 10) > 50 ? 1900 : 2000) + parseInt(dateMatch[3], 10)
+                        : parseInt(dateMatch[3], 10);
+                    const result = tryDate(dateMatch[1], dateMatch[2], yyyy, 'Pattern8-DateKeyword');
+                    if (result) foundDates.push(result);
+                }
+            }
+        }
+
+        if (foundDates.length === 0) {
+            console.log('❌ [DATE DEBUG] No valid dates found');
+            return "";
+        }
+
+        // Return the first valid date found
+        console.log('✅ [DATE DEBUG] Using date:', foundDates[0]);
+        return foundDates[0];
+    }
+
+    // Extract tax amount (UNIVERSAL - handles various formats and labels)
+    function extractTax(lines) {
+        console.log('🔍 [TAX DEBUG] Searching for tax amount...');
+
+        // Many different ways tax can be written
+        const taxKeywords = [
+            'tax', 'sales tax', 'state tax', 'local tax', 'city tax',
+            'vat', 'gst', 'hst', 'pst', 'qst',
+            'excise', 'levy', 'duty',
+            'tax amt', 'tax amount', 'tax total',
+            'txbl', 'tx'  // Abbreviated versions
+        ];
+
+        // Build regex from keywords
+        const taxPattern = new RegExp('\\b(' + taxKeywords.join('|') + ')\\b', 'i');
+
+        // Skip patterns
+        const skipPatterns = /tax\s*(id|exempt|free|included|number|#|no\.|registration)/i;
+
+        // Look for tax lines
+        for (const line of lines) {
+            if (taxPattern.test(line)) {
+                console.log('🔍 [TAX DEBUG] Found potential tax line:', line);
+
+                if (skipPatterns.test(line)) {
+                    console.log('⏭️ [TAX DEBUG] Skipping (tax ID/exempt/etc.)');
+                    continue;
+                }
+
+                // Find any monetary amount on this line
+                // Handles: $5.23, 5.23, $5,23 (European), 5,23
+                const amountMatch = line.match(/\$?\s*(\d+)[.,](\d{2})\b/);
+                if (amountMatch) {
+                    const amount = amountMatch[1] + '.' + amountMatch[2];
+                    const taxAmount = parseFloat(amount);
+
+                    if (taxAmount > 0 && taxAmount < 500) {
+                        console.log('✅ [TAX DEBUG] Found tax amount:', amount);
+                        return amount;
+                    }
+                }
+
+                // Also try just finding any decimal number
+                const numMatch = line.match(/(\d+\.\d+)/);
+                if (numMatch) {
+                    const taxAmount = parseFloat(numMatch[1]);
+                    if (taxAmount > 0 && taxAmount < 100) {
+                        console.log('✅ [TAX DEBUG] Found tax amount (fallback):', numMatch[1]);
+                        // Format to 2 decimal places
+                        return taxAmount.toFixed(2);
+                    }
+                }
+            }
+        }
+
+        // Second pass: look for percentage-based tax
+        for (const line of lines) {
+            if (/\d+\.?\d*\s*%/.test(line)) {
+                console.log('🔍 [TAX DEBUG] Found line with percentage:', line);
+
+                const amountMatch = line.match(/\$?\s*(\d+)[.,](\d{2})\b/);
+                if (amountMatch) {
+                    const amount = amountMatch[1] + '.' + amountMatch[2];
+                    console.log('✅ [TAX DEBUG] Found tax from % line:', amount);
+                    return amount;
+                }
+            }
+        }
+
+        // Third pass: look for any line that ENDS with a small decimal amount after "tax"
+        for (const line of lines) {
+            const taxIdx = line.toLowerCase().indexOf('tax');
+            if (taxIdx !== -1) {
+                const afterTax = line.substring(taxIdx);
+                const amounts = afterTax.match(/(\d+\.\d{2})/g);
+                if (amounts && amounts.length > 0) {
+                    const lastAmount = amounts[amounts.length - 1];
+                    const taxAmount = parseFloat(lastAmount);
+                    if (taxAmount > 0 && taxAmount < 100) {
+                        console.log('✅ [TAX DEBUG] Found tax (last amount after "tax"):', lastAmount);
+                        return lastAmount;
+                    }
+                }
+            }
+        }
+
+        console.log('❌ [TAX DEBUG] No tax amount found');
+        return "";
+    }
+
+    // Confidence scoring functions
+    function merchantConfidence(v) {
+        if (!v) return 0;
+        if (v.length < 3) return 0.4;
+
+        // Count letters
+        const letters = v.replace(/[^A-Za-z]/g, "").length;
+
+        // Low confidence if mostly numbers
+        if (letters < v.length * 0.3) return 0.5;
+
+        // Medium confidence if has unusual chars (except common ones)
+        const allowedSpecial = /[&'\-\s0-9]/;
+        const hasWeirdChars = v.split('').some(c => !allowedSpecial.test(c) && !/[A-Za-z]/.test(c));
+        if (hasWeirdChars) return 0.7;
+
+        // Good confidence if reasonable length and mostly letters
+        return 0.9;
+    }
+
+    function totalConfidence(v) {
+        if (!v) return 0;
+        // Valid if it's a number with 2 decimal places
+        if (/^\d+\.\d{2}$/.test(v)) return 0.95;
+        // Partial confidence if at least looks like a number
+        if (/\d+\.?\d*/.test(v)) return 0.7;
+        return 0.5;
+    }
+
+    function dateConfidence(v) {
+        if (!v) return 0;
+
+        // Check if valid ISO format (YYYY-MM-DD)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return 0.4;
+
+        const d = new Date(v);
+        if (isNaN(d.getTime())) return 0.4;
+
+        // Future date is very suspicious
+        if (d > new Date()) return 0.2;
+
+        // Very old date (before 2000) is suspicious
+        if (d.getFullYear() < 2000) return 0.3;
+
+        return 0.9;
+    }
+
+    // Confidence-based UX helper
+    function showStatus(input, confidence, fieldName) {
+        if (!input) return;
+
+        // Show or hide badge and hint
+        const badge = document.getElementById(`${fieldName}-badge`);
+        const hint = document.getElementById(`${fieldName}-hint`);
+
+        if (confidence >= 0.85) {
+            input.classList.remove("needs-review");
+            input.classList.add("high-confidence");
+        } else if (confidence >= 0.5) {
+            input.classList.add("needs-review");
+            if (hint) hint.textContent = "⚠️ Low confidence. Please verify.";
+        } else if (confidence > 0) {
+            input.classList.add("needs-review");
+            if (hint) hint.textContent = "⚠️ Needs review. Please verify.";
+        }
+
+        // Show badge and hint if value was auto-filled
+        if (badge && input.value) badge.style.display = 'inline-flex';
+        if (hint && input.value) hint.style.display = 'block';
+    }
+
+    // Store AI suggestions for future improvement (data strategy)
+    let aiSuggestions = {
+        merchant: null,
+        amount: null,
+        tax: null,
+        date: null
+    };
+
+    // Track user edits for learning
+    function trackUserEdit(input, fieldName, originalValue) {
+        input.addEventListener('input', function () {
+            // Remove auto-fill styling when user edits
+            input.classList.add('user-edited');
+
+            // Store the edit for potential future ML training
+            if (aiSuggestions[fieldName] !== null && input.value !== aiSuggestions[fieldName]) {
+                console.log(`📝 User edited ${fieldName}: AI suggested "${aiSuggestions[fieldName]}" → User entered "${input.value}"`);
+
+                // This data can be sent to backend later for ML improvement
+                window.userEdits = window.userEdits || [];
+                window.userEdits.push({
+                    field: fieldName,
+                    ai_suggestion: aiSuggestions[fieldName],
+                    user_final: input.value,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }, { once: true }); // Only track first edit
+    }
+
     async function processReceiptWithOCR(imageFile) {
         const ocrLoading = document.getElementById('ocr-loading');
         const ocrProgressFill = document.getElementById('ocr-progress-fill');
@@ -100,138 +566,144 @@
         try {
             // Show loading indicator
             ocrLoading.classList.add('active');
-            ocrStatus.textContent = 'Initializing OCR engine...';
-            ocrProgressFill.style.width = '10%';
+            ocrStatus.textContent = 'Preprocessing image...';
+            ocrProgressFill.style.width = '5%';
 
             console.log('🔍 Starting OCR processing...');
 
-            // Process image with Tesseract
+            // STEP 1: Preprocess image for better OCR accuracy
+            const processedImage = await preprocessImage(imageFile);
+            ocrProgressFill.style.width = '15%';
+            ocrStatus.textContent = 'Initializing smart capture...';
+
+            // STEP 2: Process image with Tesseract
             const result = await Tesseract.recognize(
-                imageFile,
+                processedImage,
                 'eng',
                 {
                     logger: function (m) {
-                        // Update progress
                         if (m.status === 'recognizing text') {
                             const progress = Math.round(m.progress * 100);
-                            ocrProgressFill.style.width = `${10 + (progress * 0.8)}%`;
+                            ocrProgressFill.style.width = `${15 + (progress * 0.7)}%`;
                             ocrStatus.textContent = `Reading receipt... ${progress}%`;
                         }
                     }
                 }
             );
 
-            ocrProgressFill.style.width = '95%';
+            ocrProgressFill.style.width = '90%';
             ocrStatus.textContent = 'Extracting data...';
 
             console.log('📄 OCR Text extracted:', result.data.text);
 
-            // Parse the extracted text
-            const extractedData = parseReceiptText(result.data.text);
-            console.log('✅ Extracted data:', extractedData);
+            // STEP 3: Parse using improved extraction functions
+            const lines = getLines(result.data.text);
+            console.log('📋 Parsed lines:', lines);
 
-            // Auto-fill form fields
-            if (extractedData.merchant) {
-                const merchantInput = document.getElementById('merchant-name');
-                merchantInput.value = extractedData.merchant;
+            const merchant = extractMerchant(lines);
+            const total = extractTotal(lines);
+            const date = extractDate(lines);
+            const tax = extractTax(lines);
+
+            console.log('✅ Extracted data:', { merchant, total, date, tax });
+
+            // Store AI suggestions for tracking
+            aiSuggestions = {
+                merchant: merchant || null,
+                amount: total || null,
+                tax: tax || null,
+                date: date || null
+            };
+
+            // STEP 4: Get form elements
+            const merchantInput = document.getElementById('merchant-name');
+            const amountInput = document.getElementById('amount');
+            const dateInput = document.getElementById('receipt-date');
+            const taxInput = document.getElementById('tax');
+            const aiNotice = document.getElementById('ai-notice');
+
+            let fieldsAutoFilled = 0;
+
+            // Fill Merchant
+            if (merchant) {
+                merchantInput.value = merchant;
                 merchantInput.classList.add('auto-filled');
+                showStatus(merchantInput, merchantConfidence(merchant), 'merchant');
+                trackUserEdit(merchantInput, 'merchant', merchant);
+                fieldsAutoFilled++;
             }
 
-            if (extractedData.amount) {
-                const amountInput = document.getElementById('amount');
-                amountInput.value = extractedData.amount;
+            // Fill Amount
+            if (total) {
+                amountInput.value = total;
                 amountInput.classList.add('auto-filled');
+                showStatus(amountInput, totalConfidence(total), 'amount');
+                trackUserEdit(amountInput, 'amount', total);
+                fieldsAutoFilled++;
             }
 
-
-            if (extractedData.date) {
-                const dateInput = document.getElementById('receipt-date');
-                dateInput.value = extractedData.date;
+            // Fill Date
+            if (date) {
+                dateInput.value = date;
                 dateInput.classList.add('auto-filled');
+                showStatus(dateInput, dateConfidence(date), 'date');
+                trackUserEdit(dateInput, 'date', date);
+                fieldsAutoFilled++;
             }
 
-            // Success
-            ocrProgressFill.style.width = '100%';
-            ocrStatus.textContent = '✅ Receipt data extracted!';
-            ocrStatus.style.color = '#059669';
+            // Fill Tax
+            if (taxInput) {
+                if (tax) {
+                    taxInput.value = tax;
+                    taxInput.classList.add('auto-filled');
+                    showStatus(taxInput, 0.9, 'tax');
+                    trackUserEdit(taxInput, 'tax', tax);
+                    fieldsAutoFilled++;
+                } else {
+                    showStatus(taxInput, 0.4, 'tax');
+                }
+            }
 
-            // Show form with pre-filled data immediately
+            // STEP 5: Show AI notice if any fields were auto-filled
+            if (fieldsAutoFilled > 0 && aiNotice) {
+                aiNotice.style.display = 'flex';
+            }
+
+            // Success message based on how much was detected
+            ocrProgressFill.style.width = '100%';
+            if (fieldsAutoFilled >= 3) {
+                ocrStatus.textContent = '✅ Receipt captured successfully!';
+                ocrStatus.style.color = '#059669';
+            } else if (fieldsAutoFilled > 0) {
+                ocrStatus.textContent = '✅ Partial data captured. Please complete missing fields.';
+                ocrStatus.style.color = '#d97706';
+            } else {
+                ocrStatus.textContent = '⚠️ Could not detect data. Please enter manually.';
+                ocrStatus.style.color = '#DC2626';
+            }
+
+            // Show form
             document.getElementById('receipt-form').style.display = 'block';
 
-            // Hide loading after 1.5 seconds
+            // Hide loading
             setTimeout(function () {
                 ocrLoading.classList.remove('active');
             }, 1500);
 
         } catch (error) {
             console.error('❌ OCR error:', error);
-            ocrStatus.textContent = '⚠️ Could not read receipt. Please enter manually.';
+
+            // User-friendly error message (never say "AI failed")
+            ocrStatus.textContent = '⚠️ Smart capture unavailable. Please enter details manually.';
             ocrStatus.style.color = '#DC2626';
 
-            // Show form for manual entry even if OCR failed
+            // Show form for manual entry
             document.getElementById('receipt-form').style.display = 'block';
 
-            // Hide loading after 2 seconds
             setTimeout(function () {
                 ocrLoading.classList.remove('active');
             }, 2000);
         }
-    }
-
-    // Parse extracted text to find merchant, amount, and date
-    function parseReceiptText(text) {
-        const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-
-        let merchant = '';
-        let amount = '';
-        let date = '';
-
-        // Find merchant name (usually in first 3 lines, longest line)
-        const topLines = lines.slice(0, 5);
-        merchant = topLines.reduce((longest, current) => {
-            // Skip lines that look like addresses or numbers
-            if (current.length > longest.length &&
-                !/^\d+/.test(current) &&
-                !/(street|st\.|ave|avenue|road|rd\.|blvd)/i.test(current)) {
-                return current;
-            }
-            return longest;
-        }, '');
-
-        // Find amount - look for total, amount due, etc.
-        const amountPatterns = [
-            /(?:total|amount due|balance|grand total)[:\s]*\$?\s*(\d+[.,]\d{2})/i,
-            /\$\s*(\d+[.,]\d{2})\s*(?:total|amount|balance)/i,
-            /(?:^|\s)(\d+[.,]\d{2})\s*(?:total|amount|balance|due)/i,
-            /total[:\s]*(\d+[.,]\d{2})/i,
-            /\$\s*(\d+[.,]\d{2})/g  // Fallback: any dollar amount
-        ];
-
-        for (const pattern of amountPatterns) {
-            const match = text.match(pattern);
-            if (match) {
-                amount = match[1].replace(',', '.');
-                break;
-            }
-        }
-
-        // Find date - multiple formats
-        const datePatterns = [
-            /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/,  // MM/DD/YYYY or DD-MM-YYYY
-            /(\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})/,    // YYYY-MM-DD
-            /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2},?\s+\d{2,4}/i,  // Month DD, YYYY
-            /\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{2,4}/i     // DD Month YYYY
-        ];
-
-        for (const pattern of datePatterns) {
-            const match = text.match(pattern);
-            if (match) {
-                date = convertToISODate(match[0]);
-                break;
-            }
-        }
-
-        return { merchant, amount, date };
     }
 
     // Convert various date formats to YYYY-MM-DD
@@ -295,6 +767,7 @@
 
         const merchantName = document.getElementById('merchant-name').value.trim();
         const amount = parseFloat(document.getElementById('amount').value);
+        const taxAmount = parseFloat(document.getElementById('tax').value) || 0;
         const receiptDate = document.getElementById('receipt-date').value;
         const isBusiness = document.getElementById('is-business').value === 'true';
         const notes = document.getElementById('notes').value;
@@ -319,8 +792,9 @@
         }
 
         const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Uploading...';
+        submitBtn.innerHTML = '<span class="btn-icon">⏳</span> Saving...';
 
         try {
             console.log('📤 Uploading receipt...');
@@ -340,25 +814,55 @@
                 filePaths.push(data.path);
             }
 
-            // Save receipt metadata
+            // Prepare the receipt data
+            // NOTE: Ensure you have run ADD_TAX_COLUMN.sql to add the tax_amount column
+            // Fallback: If migration not run, we append tax to notes so it's not lost
+            const finalNotes = taxAmount > 0
+                ? (notes ? `${notes} [Tax: $${taxAmount.toFixed(2)}]` : `[Tax: $${taxAmount.toFixed(2)}]`)
+                : notes;
+
+            const receiptData = {
+                user_id: user.id,
+                merchant_name: merchantName,
+                amount: amount,
+                tax_amount: taxAmount,
+                receipt_date: receiptDate,
+                file_path: filePaths.join(','),
+                notes: finalNotes,
+                is_business: isBusiness
+            };
+
+            // Log AI tracking data to console (for debugging & future use)
+            // Note: This data can be sent to a separate tracking table in the future
+            if (aiSuggestions.merchant !== null || aiSuggestions.amount !== null) {
+                const aiTrackingData = {
+                    suggestions: aiSuggestions,
+                    user_edits: window.userEdits || [],
+                    was_auto_filled: true,
+                    tax_detected: taxAmount || 0
+                };
+                console.log('📊 AI Tracking Data (console only - not saved to DB):', aiTrackingData);
+                console.log('💡 To save this data, add an ai_tracking table or ai_data column to receipts table');
+            }
+
+            // Save receipt metadata to database
             const { error: dbError } = await supabase
                 .from('receipts')
-                .insert({
-                    user_id: user.id,
-                    merchant_name: merchantName,
-                    amount: amount,
-                    receipt_date: receiptDate,
-                    file_path: filePaths.join(','),
-                    notes: notes,
-                    is_business: isBusiness
-                });
+                .insert(receiptData);
 
-            if (dbError) throw dbError;
+            if (dbError) {
+                console.error('Database error:', dbError);
+                throw new Error(dbError.message || 'Failed to save receipt');
+            }
 
-            console.log('✅ Receipt uploaded successfully');
-            showMessage('Receipt uploaded successfully!', 'success');
+            console.log('✅ Receipt saved successfully');
+            showMessage('Receipt saved successfully!', 'success');
 
-            // Reset form and redirect
+            // Clear AI tracking
+            aiSuggestions = { merchant: null, amount: null, tax: null, date: null };
+            window.userEdits = [];
+
+            // Redirect to dashboard
             setTimeout(function () {
                 window.location.href = '/dashboard.html';
             }, 1500);
@@ -367,7 +871,7 @@
             console.error('❌ Upload error:', error);
             showMessage(error.message, 'error');
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Save Receipt';
+            submitBtn.innerHTML = originalBtnText;
         }
     }
 

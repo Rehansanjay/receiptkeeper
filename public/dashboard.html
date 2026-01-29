@@ -376,6 +376,113 @@
             }
         }
 
+        /* Delete Button */
+        .delete-btn {
+            background: #FEE2E2;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 12px;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .delete-btn:hover {
+            background: #EF4444;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .receipt-actions-group {
+            display: flex;
+            align-items: center;
+        }
+
+        /* CUSTOM MODAL - Mobile Friendly */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+            padding: 20px;
+        }
+
+        .modal-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            animation: popIn 0.2s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 8px;
+        }
+
+        .modal-text {
+            color: #6B7280;
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 0.95rem;
+        }
+
+        .btn-cancel {
+            background: #F3F4F6;
+            color: #4B5563;
+        }
+
+        .btn-confirm-delete {
+            background: #EF4444;
+            color: white;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             nav {
@@ -404,6 +511,25 @@
                 text-align: center;
             }
         }
+
+        .modal-textarea {
+            width: 100%;
+            height: 100px;
+            padding: 12px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: inherit;
+            resize: none;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+
+        .modal-textarea:focus {
+            outline: none;
+            border-color: #8B5CF6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
     </style>
 </head>
 
@@ -415,6 +541,7 @@
         </div>
         <div class="nav-actions">
             <button class="nav-btn" onclick="window.location.href='/'">Home</button>
+            <button class="nav-btn" onclick="window.location.href='/pricing.html'">Pricing</button>
             <button class="nav-btn" id="logout-btn">Log Out</button>
         </div>
     </nav>
@@ -426,249 +553,297 @@
         <button class="upgrade-btn" id="upgrade-btn" style="display: none;">Upgrade Now</button>
     </div>
 
+    <!-- CUSTOM CONFIRMATION POPUP -->
+    <div id="delete-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div style="font-size: 2rem; margin-bottom: 12px;">🗑️</div>
+            <div class="modal-title">Delete Receipt?</div>
+            <div class="modal-text">Are you sure you want to delete this receipt? This action cannot be undone.</div>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeModal()">No, Cancel</button>
+                <button class="modal-btn btn-confirm-delete" onclick="confirmDeleteAction()">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SMART EXPORT MODAL -->
+    <div id="smart-export-modal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 400px;">
+            <div style="font-size: 2rem; margin-bottom: 12px;">✨</div>
+            <div class="modal-title">Smart Export</div>
+            <div class="modal-text">Describe what you want to export.</div>
+
+            <textarea id="export-prompt" class="modal-textarea"
+                placeholder="e.g. 'Business receipts from Starbucks last month' or 'Expenses over $100'"></textarea>
+
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeSmartExportModal()">Cancel</button>
+                <button class="modal-btn" style="background: #8B5CF6; color: white;" onclick="runSmartExport()">Generate
+                    CSV</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Welcome Card -->
         <div class="welcome-card">
             <h2 id="welcome-msg">Welcome!</h2>
             <p id="user-email">Loading...</p>
-        </div>
 
-        <!-- Stats Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Total Receipts</h3>
-                <div class="value" id="total-receipts">0</div>
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Receipts</h3>
+                    <div class="value" id="total-receipts">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Amount</h3>
+                    <div class="value" id="total-amount">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <h3>This Month</h3>
+                    <div class="value" id="month-receipts">0</div>
+                </div>
+                <div class="stat-card business">
+                    <h3>Business Expenses</h3>
+                    <div class="value" id="business-amount">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Tax</h3>
+                    <div class="value" id="total-tax">$0.00</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>Total Amount</h3>
-                <div class="value" id="total-amount">$0.00</div>
-            </div>
-            <div class="stat-card">
-                <h3>This Month</h3>
-                <div class="value" id="month-receipts">0</div>
-            </div>
-            <div class="stat-card business">
-                <h3>Business Expenses</h3>
-                <div class="value" id="business-amount">$0.00</div>
-            </div>
-        </div>
 
-        <!-- Action Buttons -->
-        <div class="actions">
-            <button class="btn btn-primary" onclick="window.location.href='/upload.html'">
-                📤 Upload Receipt
-            </button>
-            <button class="btn btn-secondary" id="export-btn">
-                📥 Export Tax Package
-            </button>
-        </div>
-
-        <!-- Receipts Section -->
-        <div class="receipts-section">
-            <div class="receipts-header">
-                <h3>Recent Receipts</h3>
+            <!-- Action Buttons -->
+            <div class="actions">
+                <button class="btn btn-primary" onclick="window.location.href='/upload.html'">
+                    📤 Upload Receipt
+                </button>
+                <button class="btn btn-secondary" id="export-btn">
+                    📥 Export Tax Package
+                </button>
+                <button class="btn btn-primary" id="smart-export-btn"
+                    style="background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);">
+                    ✨ Smart Export
+                </button>
             </div>
-            <div id="receipts-list">
-                <div class="loading">
-                    <div class="spinner"></div>
+
+            <!-- Receipts Section -->
+            <div class="receipts-section">
+                <div class="receipts-header">
+                    <h3>Recent Receipts</h3>
+                </div>
+                <div id="receipts-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script>
-        (function () {
-            'use strict';
+        <script>
+            (function () {
+                'use strict';
 
-            // Configuration
-            const CONFIG = {
-                url: 'https://hiscskqwlgavicihsote.supabase.co',
-                key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpc2Nza3F3bGdhdmljaWhzb3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDc2MDMsImV4cCI6MjA4NDk4MzYwM30.Acu9LBOgIa_kLlm4gcDb06Dw8cwxnYxeyr_gI7PweL8'
-            };
-
-            // Initialize Supabase
-            const sb = window.supabase.createClient(CONFIG.url, CONFIG.key);
-            let currentUser = null;
-            let allReceipts = [];
-            let userProfile = null;
-
-            console.log('📊 Dashboard initializing...');
-
-            // Initialize dashboard
-            async function init() {
-                try {
-                    // Check authentication
-                    const { data: { session }, error } = await sb.auth.getSession();
-
-                    if (error || !session) {
-                        console.log('❌ No session, redirecting to login');
-                        window.location.href = '/login.html';
-                        return;
-                    }
-
-                    currentUser = session.user;
-                    console.log('✅ User authenticated:', currentUser.email);
-
-                    // Update UI with user info
-                    document.getElementById('user-email').textContent = currentUser.email;
-
-                    // Load data
-                    await Promise.all([
-                        loadProfile(),
-                        loadReceipts()
-                    ]);
-
-                    // Setup event listeners
-                    setupLogout();
-                    setupExport();
-
-                } catch (err) {
-                    console.error('❌ Init error:', err);
-                    window.location.href = '/login.html';
-                }
-            }
-
-            // Load user profile and trial status
-            async function loadProfile() {
-                try {
-                    const { data, error } = await sb
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', currentUser.id)
-                        .single();
-
-                    if (error) {
-                        console.warn('⚠️ Profile not found:', error.message);
-                        document.getElementById('welcome-msg').textContent = `Welcome, ${currentUser.email.split('@')[0]}!`;
-                        // Show default trial banner for new users
-                        showTrialBanner({ subscription_status: 'trial', trial_end_date: null });
-                        return;
-                    }
-
-                    userProfile = data;
-                    const name = data.full_name || data.business_name || currentUser.email.split('@')[0];
-                    document.getElementById('welcome-msg').textContent = `Welcome back, ${name}!`;
-
-                    // Show trial status
-                    showTrialBanner(data);
-
-                    console.log('✅ Profile loaded');
-                } catch (err) {
-                    console.error('❌ Profile error:', err);
-                }
-            }
-
-            // Show trial banner based on subscription status
-            function showTrialBanner(profile) {
-                const banner = document.getElementById('trial-banner');
-                const badge = document.getElementById('trial-badge');
-                const text = document.getElementById('trial-text');
-                const upgradeBtn = document.getElementById('upgrade-btn');
-
-                if (!profile) {
-                    banner.style.display = 'none';
-                    return;
-                }
-
-                const status = profile.subscription_status || 'trial';
-
-                if (status === 'active') {
-                    // Paid user - show success banner
-                    banner.className = 'trial-banner active';
-                    badge.textContent = 'PRO';
-                    text.textContent = '✨ You have an active subscription. Thank you for your support!';
-                    upgradeBtn.style.display = 'none';
-                    banner.style.display = 'flex';
-                    return;
-                }
-
-                // Calculate days left in trial
-                let daysLeft = 14; // Default for new users
-                if (profile.trial_end_date) {
-                    const trialEnd = new Date(profile.trial_end_date);
-                    const now = new Date();
-                    daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
-                }
-
-                if (daysLeft > 0) {
-                    // Active trial
-                    banner.className = 'trial-banner';
-                    badge.textContent = 'TRIAL';
-                    text.textContent = `🎉 You have ${daysLeft} day${daysLeft === 1 ? '' : 's'} left in your free trial`;
-                    upgradeBtn.style.display = 'inline-block';
-                    upgradeBtn.textContent = 'Upgrade to Pro - $29/year';
-                } else {
-                    // Trial expired
-                    banner.className = 'trial-banner expired';
-                    badge.textContent = 'EXPIRED';
-                    text.textContent = '⚠️ Your free trial has expired. Upgrade to continue using all features.';
-                    upgradeBtn.style.display = 'inline-block';
-                    upgradeBtn.textContent = 'Upgrade Now - $29/year';
-                }
-
-                banner.style.display = 'flex';
-
-                // Upgrade button click
-                upgradeBtn.onclick = function () {
-                    // TODO: Implement payment flow
-                    alert('Payment integration coming soon! For now, enjoy your trial.');
+                // Configuration
+                const CONFIG = {
+                    url: 'https://hiscskqwlgavicihsote.supabase.co',
+                    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpc2Nza3F3bGdhdmljaWhzb3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDc2MDMsImV4cCI6MjA4NDk4MzYwM30.Acu9LBOgIa_kLlm4gcDb06Dw8cwxnYxeyr_gI7PweL8'
                 };
-            }
 
-            // Load receipts
-            async function loadReceipts() {
-                try {
-                    const { data, error } = await sb
-                        .from('receipts')
-                        .select('*')
-                        .eq('user_id', currentUser.id)
-                        .order('receipt_date', { ascending: false });
+                // Initialize Supabase
+                const sb = window.supabase.createClient(CONFIG.url, CONFIG.key);
+                let currentUser = null;
+                let allReceipts = [];
+                let userProfile = null;
 
-                    if (error) throw error;
+                // For Delete Logic
+                let receiptToDeleteId = null;
 
-                    allReceipts = data || [];
-                    console.log(`✅ Loaded ${allReceipts.length} receipts`);
+                console.log('📊 Dashboard initializing...');
 
-                    updateStats();
-                    displayReceipts();
-                } catch (err) {
-                    console.error('❌ Receipts error:', err);
-                    document.getElementById('receipts-list').innerHTML = `
+                // Initialize dashboard
+                async function init() {
+                    try {
+                        // Check authentication
+                        const { data: { session }, error } = await sb.auth.getSession();
+
+                        if (error || !session) {
+                            console.log('❌ No session, redirecting to login');
+                            window.location.href = '/login.html';
+                            return;
+                        }
+
+                        currentUser = session.user;
+                        console.log('✅ User authenticated:', currentUser.email);
+
+                        // Update UI with user info
+                        document.getElementById('user-email').textContent = currentUser.email;
+
+                        // Load data
+                        await Promise.all([
+                            loadProfile(),
+                            loadReceipts()
+                        ]);
+
+                        // Setup event listeners
+                        setupLogout();
+                        setupExport();
+
+                    } catch (err) {
+                        console.error('❌ Init error:', err);
+                        window.location.href = '/login.html';
+                    }
+                }
+
+                // Load user profile and trial status
+                async function loadProfile() {
+                    try {
+                        const { data, error } = await sb
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', currentUser.id)
+                            .single();
+
+                        if (error) {
+                            console.warn('⚠️ Profile not found:', error.message);
+                            document.getElementById('welcome-msg').textContent = `Welcome, ${currentUser.email.split('@')[0]}!`;
+                            showTrialBanner({ subscription_status: 'trial', trial_end_date: null });
+                            return;
+                        }
+
+                        userProfile = data;
+                        const name = data.full_name || data.business_name || currentUser.email.split('@')[0];
+                        document.getElementById('welcome-msg').textContent = `Welcome back, ${name}!`;
+
+                        // Show trial status
+                        showTrialBanner(data);
+
+                        console.log('✅ Profile loaded');
+                    } catch (err) {
+                        console.error('❌ Profile error:', err);
+                    }
+                }
+
+                // Show trial banner based on subscription status
+                function showTrialBanner(profile) {
+                    const banner = document.getElementById('trial-banner');
+                    const badge = document.getElementById('trial-badge');
+                    const text = document.getElementById('trial-text');
+                    const upgradeBtn = document.getElementById('upgrade-btn');
+
+                    if (!profile) {
+                        banner.style.display = 'none';
+                        return;
+                    }
+
+                    const status = profile.subscription_status || 'trial';
+
+                    if (status === 'active') {
+                        banner.className = 'trial-banner active';
+                        badge.textContent = 'PRO';
+                        text.textContent = '✨ You have an active subscription. Thank you for your support!';
+                        upgradeBtn.style.display = 'none';
+                        banner.style.display = 'flex';
+                        return;
+                    }
+
+                    let daysLeft = 14;
+                    if (profile.trial_end_date) {
+                        const trialEnd = new Date(profile.trial_end_date);
+                        const now = new Date();
+                        daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+                    }
+
+                    if (daysLeft > 0) {
+                        banner.className = 'trial-banner';
+                        badge.textContent = 'TRIAL';
+                        text.textContent = `🎉 You have ${daysLeft} day${daysLeft === 1 ? '' : 's'} left in your free trial`;
+                        upgradeBtn.style.display = 'inline-block';
+                        upgradeBtn.textContent = 'Upgrade to Pro - $29/year';
+                    } else {
+                        banner.className = 'trial-banner expired';
+                        badge.textContent = 'EXPIRED';
+                        text.textContent = '⚠️ Your free trial has expired. Upgrade to continue using all features.';
+                        upgradeBtn.style.display = 'inline-block';
+                        upgradeBtn.textContent = 'Upgrade Now - $29/year';
+                    }
+
+                    banner.style.display = 'flex';
+
+                    upgradeBtn.onclick = function () {
+                        alert('Payment integration coming soon! For now, enjoy your trial.');
+                    };
+                }
+
+                // Load receipts
+                async function loadReceipts() {
+                    try {
+                        const { data, error } = await sb
+                            .from('receipts')
+                            .select('*')
+                            .eq('user_id', currentUser.id)
+                            .order('receipt_date', { ascending: false });
+
+                        if (error) throw error;
+
+                        allReceipts = data || [];
+                        console.log(`✅ Loaded ${allReceipts.length} receipts`);
+
+                        updateStats();
+                        displayReceipts();
+                    } catch (err) {
+                        console.error('❌ Receipts error:', err);
+                        document.getElementById('receipts-list').innerHTML = `
                         <div class="empty-state">
                             <div class="icon">⚠️</div>
                             <h3>Unable to load receipts</h3>
                             <p>Please refresh the page to try again.</p>
                         </div>
                     `;
+                    }
                 }
-            }
 
-            // Update stats
-            function updateStats() {
-                const total = allReceipts.length;
-                const totalAmount = allReceipts.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-                const businessAmount = allReceipts
-                    .filter(r => r.is_business)
-                    .reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+                // Update stats
+                function updateStats() {
+                    const total = allReceipts.length;
+                    const totalAmount = allReceipts.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
 
-                const now = new Date();
-                const thisMonth = allReceipts.filter(r => {
-                    const date = new Date(r.receipt_date);
-                    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                }).length;
+                    // Calculate tax (fallback to parsing from notes if column missing)
+                    const totalTax = allReceipts.reduce((sum, r) => {
+                        let tax = parseFloat(r.tax_amount || 0);
+                        if (!tax && r.notes) {
+                            // Regex fixed to handle space after colon: [Tax: $12.34]
+                            const match = r.notes.match(/\[Tax:\s*\$?([\d.]+)\]/i);
+                            if (match) tax = parseFloat(match[1]);
+                        }
+                        return sum + tax;
+                    }, 0);
 
-                document.getElementById('total-receipts').textContent = total;
-                document.getElementById('total-amount').textContent = `$${totalAmount.toFixed(2)}`;
-                document.getElementById('month-receipts').textContent = thisMonth;
-                document.getElementById('business-amount').textContent = `$${businessAmount.toFixed(2)}`;
-            }
+                    const businessAmount = allReceipts
+                        .filter(r => r.is_business)
+                        .filter(r => r.is_business)
+                        .reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
 
-            // Display receipts
-            function displayReceipts() {
-                const container = document.getElementById('receipts-list');
+                    const now = new Date();
+                    const thisMonth = allReceipts.filter(r => {
+                        const date = new Date(r.receipt_date);
+                        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                    }).length;
 
-                if (allReceipts.length === 0) {
-                    container.innerHTML = `
+                    document.getElementById('total-receipts').textContent = total;
+                    document.getElementById('total-amount').textContent = `$${totalAmount.toFixed(2)}`;
+                    document.getElementById('month-receipts').textContent = thisMonth;
+                    document.getElementById('business-amount').textContent = `$${businessAmount.toFixed(2)}`;
+                    document.getElementById('total-tax').textContent = `$${totalTax.toFixed(2)}`;
+                }
+
+                // Display receipts
+                function displayReceipts() {
+                    const container = document.getElementById('receipts-list');
+
+                    if (allReceipts.length === 0) {
+                        container.innerHTML = `
                         <div class="empty-state">
                             <div class="icon">📭</div>
                             <h3>No receipts yet</h3>
@@ -678,19 +853,19 @@
                             </button>
                         </div>
                     `;
-                    return;
-                }
+                        return;
+                    }
 
-                container.innerHTML = allReceipts.slice(0, 10).map(r => {
-                    const date = new Date(r.receipt_date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                    });
-                    const badgeClass = r.is_business ? 'badge-business' : 'badge-personal';
-                    const badgeText = r.is_business ? 'Business' : 'Personal';
+                    container.innerHTML = allReceipts.slice(0, 10).map(r => {
+                        const date = new Date(r.receipt_date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        });
+                        const badgeClass = r.is_business ? 'badge-business' : 'badge-personal';
+                        const badgeText = r.is_business ? 'Business' : 'Personal';
 
-                    return `
+                        return `
                         <div class="receipt-item">
                             <div class="receipt-info">
                                 <h4>${r.merchant_name || 'Unknown Merchant'}</h4>
@@ -699,73 +874,250 @@
                                     <span class="receipt-badge ${badgeClass}">${badgeText}</span>
                                 </div>
                             </div>
-                            <div class="receipt-amount">$${parseFloat(r.amount || 0).toFixed(2)}</div>
+                            <div class="receipt-actions-group">
+                                <div class="receipt-amount">$${parseFloat(r.amount || 0).toFixed(2)}</div>
+                                <button class="delete-btn" onclick="openDeleteModal('${r.id}')" title="Delete Receipt">
+                                    🗑️
+                                </button>
+                            </div>
                         </div>
                     `;
-                }).join('');
-            }
+                    }).join('');
+                }
 
-            // Logout handler
-            function setupLogout() {
-                document.getElementById('logout-btn').addEventListener('click', async function () {
+                // NEW: Modal Functions
+                window.openDeleteModal = function (id) {
+                    receiptToDeleteId = id;
+                    document.getElementById('delete-modal').style.display = 'flex';
+                };
+
+                window.closeModal = function () {
+                    receiptToDeleteId = null;
+                    document.getElementById('delete-modal').style.display = 'none';
+                };
+
+                window.confirmDeleteAction = async function () {
+                    if (!receiptToDeleteId) return;
+
+                    const id = receiptToDeleteId;
+                    const modal = document.getElementById('delete-modal');
+                    const confirmBtn = modal.querySelector('.btn-confirm-delete');
+
+                    // Show loading state on button
+                    confirmBtn.textContent = 'Deleting...';
+                    confirmBtn.disabled = true;
+
                     try {
-                        await sb.auth.signOut();
-                        console.log('✅ Logged out');
-                        window.location.href = '/';
+                        // Delete from Supabase
+                        const { error } = await sb
+                            .from('receipts')
+                            .delete()
+                            .eq('id', id);
+
+                        if (error) throw error;
+
+                        // Update UI
+                        allReceipts = allReceipts.filter(r => r.id !== id);
+                        updateStats();
+                        displayReceipts();
+
+                        // Close modal
+                        closeModal();
+
                     } catch (err) {
-                        console.error('❌ Logout error:', err);
-                        alert('Error logging out. Please try again.');
+                        console.error("Delete error:", err);
+                        alert("Error deleting receipt: " + err.message);
+                    } finally {
+                        // Reset button state
+                        confirmBtn.textContent = 'Yes, Delete';
+                        confirmBtn.disabled = false;
                     }
-                });
-            }
+                };
 
-            // Export handler
-            function setupExport() {
-                document.getElementById('export-btn').addEventListener('click', function () {
-                    if (allReceipts.length === 0) {
-                        alert('No receipts to export. Upload some receipts first!');
+
+
+                // Logout handler
+                function setupLogout() {
+                    document.getElementById('logout-btn').addEventListener('click', async function () {
+                        try {
+                            await sb.auth.signOut();
+                            console.log('✅ Logged out');
+                            window.location.href = '/';
+                        } catch (err) {
+                            console.error('❌ Logout error:', err);
+                            alert('Error logging out. Please try again.');
+                        }
+                    });
+                }
+
+                // Export handler
+                function setupExport() {
+                    document.getElementById('export-btn').addEventListener('click', function () {
+                        if (allReceipts.length === 0) {
+                            alert('No receipts to export. Upload some receipts first!');
+                            return;
+                        }
+
+                        const businessReceipts = allReceipts.filter(r => r.is_business);
+
+                        if (businessReceipts.length === 0) {
+                            alert('No business receipts to export. Mark some receipts as business expenses first.');
+                            return;
+                        }
+
+                        exportCSV(businessReceipts, `receipts_${new Date().getFullYear()}_tax_export.csv`);
+                        alert(`✅ Exported ${businessReceipts.length} business receipts!`);
+                    });
+
+                    // Smart Export Setup
+                    document.getElementById('smart-export-btn').addEventListener('click', function () {
+                        if (allReceipts.length === 0) {
+                            alert('No receipts to export. Upload some receipts first!');
+                            return;
+                        }
+                        document.getElementById('smart-export-modal').style.display = 'flex';
+                        document.getElementById('export-prompt').focus();
+                    });
+                }
+
+                // Global functions for Smart Export Modal
+                window.closeSmartExportModal = function () {
+                    document.getElementById('smart-export-modal').style.display = 'none';
+                    document.getElementById('export-prompt').value = '';
+                };
+
+                window.runSmartExport = function () {
+                    const prompt = document.getElementById('export-prompt').value.trim();
+                    if (!prompt) {
+                        alert('Please enter a description.');
                         return;
                     }
 
-                    const businessReceipts = allReceipts.filter(r => r.is_business);
+                    const filtered = parsePromptAndFilter(prompt, allReceipts);
 
-                    if (businessReceipts.length === 0) {
-                        alert('No business receipts to export. Mark some receipts as business expenses first.');
+                    if (filtered.length === 0) {
+                        alert('No receipts matched your description. Try a broader search.');
                         return;
                     }
 
-                    // Generate CSV
-                    const headers = ['Date', 'Merchant', 'Amount', 'Category', 'Notes'];
-                    const rows = businessReceipts.map(r => [
-                        r.receipt_date,
-                        `"${r.merchant_name || ''}"`,
-                        r.amount,
-                        r.category || 'Other',
-                        `"${(r.notes || '').replace(/"/g, '""')}"`
-                    ]);
+                    exportCSV(filtered, `smart_export_${new Date().getTime()}.csv`);
+                    window.closeSmartExportModal();
+                    alert(`✅ Exported ${filtered.length} receipts matching "${prompt}"`);
+                };
 
-                    const csv = [
+                function exportCSV(receipts, filename) {
+                    // Add BOM for Excel UTF-8 compatibility
+                    const BOM = '\uFEFF';
+                    const headers = ['Date', 'Merchant', 'Amount', 'Tax', 'Category', 'Notes'];
+
+                    const rows = receipts.map(r => {
+                        // Format date as MM/DD/YYYY for US Excel compatibility
+                        let dateStr = r.receipt_date;
+                        try {
+                            const [y, m, d] = dateStr.split('-');
+                            dateStr = `${m}/${d}/${y}`;
+                        } catch (e) { }
+
+                        // Parse tax from fallback note if needed
+                        let taxVal = r.tax_amount;
+                        let cleanNotes = r.notes || '';
+
+                        if (!taxVal && cleanNotes) {
+                            // Regex fixed to handle space after colon
+                            const match = cleanNotes.match(/\[Tax:\s*\$?([\d.]+)\]/i);
+                            if (match) {
+                                taxVal = match[1];
+                                // Optional: Remove the tax tag from the exported notes for cleaner CSV
+                                cleanNotes = cleanNotes.replace(/\[Tax:\s*\$?([\d.]+)\]/i, '').trim();
+                            }
+                        }
+
+                        return [
+                            dateStr,
+                            `"${(r.merchant_name || '').replace(/"/g, '""')}"`,
+                            r.amount,
+                            taxVal || '0.00',
+                            r.is_business ? 'Business' : 'Personal',
+                            `"${cleanNotes.replace(/"/g, '""')}"`
+                        ];
+                    });
+
+                    const csv = BOM + [
                         headers.join(','),
                         ...rows.map(row => row.join(','))
                     ].join('\n');
 
-                    // Download
-                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `receipts_${new Date().getFullYear()}_tax_export.csv`;
+                    a.download = filename;
                     a.click();
+                }
 
-                    alert(`✅ Exported ${businessReceipts.length} business receipts!`);
-                });
-            }
+                function parsePromptAndFilter(prompt, receipts) {
+                    let filtered = [...receipts];
+                    const p = prompt.toLowerCase();
 
-            // Initialize on load
-            init();
+                    // 1. Business/Personal
+                    if (p.includes('business')) filtered = filtered.filter(r => r.is_business);
+                    else if (p.includes('personal')) filtered = filtered.filter(r => !r.is_business);
 
-        })();
-    </script>
+                    // 2. Amount Logic: over/above/more than X
+                    const amountOver = p.match(/(?:over|above|more than|>\s?)\s?\$?(\d+)/);
+                    if (amountOver) filtered = filtered.filter(r => parseFloat(r.amount) >= parseFloat(amountOver[1]));
+
+                    const amountUnder = p.match(/(?:under|below|less than|<\s?)\s?\$?(\d+)/);
+                    if (amountUnder) filtered = filtered.filter(r => parseFloat(r.amount) <= parseFloat(amountUnder[1]));
+
+                    // 3. Year Extraction
+                    const yearMatch = p.match(/\b(20\d{2})\b/);
+                    if (yearMatch) {
+                        const year = parseInt(yearMatch[1]);
+                        filtered = filtered.filter(r => new Date(r.receipt_date).getFullYear() === year);
+                    }
+
+                    // 4. "Last Month"
+                    if (p.includes('last month')) {
+                        const now = new Date();
+                        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                        filtered = filtered.filter(r => {
+                            const d = new Date(r.receipt_date);
+                            return d.getMonth() === lastMonth.getMonth() && d.getFullYear() === lastMonth.getFullYear();
+                        });
+                    }
+
+                    // 5. Month Names (e.g. "in January")
+                    const months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+                    const monthIdx = months.findIndex(m => p.includes(m));
+                    if (monthIdx !== -1) {
+                        filtered = filtered.filter(r => new Date(r.receipt_date).getMonth() === monthIdx);
+                    }
+
+                    // 6. Merchant Name (simple heuristic: words after 'from')
+                    const fromMatch = p.match(/from\s+([a-z0-9\s]+)/);
+                    if (fromMatch) {
+                        // filtering out common prepositions if they appear
+                        let merchant = fromMatch[1].split(/\s+(in|on|at|above|below|over|under|business|personal)/)[0];
+                        merchant = merchant.trim();
+                        if (merchant) {
+                            filtered = filtered.filter(r => (r.merchant_name || '').toLowerCase().includes(merchant));
+                        }
+                    } else {
+                        // If no specific keywords found but prompt is short, treat as merchant name? 
+                        // Only if we haven't filtered by anything else?
+                        // Let's be safe: text search if specific text provided that isn't a command
+                        // (Handling generic search is complex without dedicated field, so stick to explicit 'from' or exact matches)
+                    }
+
+                    return filtered;
+                }
+
+                // Initialize on load
+                init();
+
+            })();
+        </script>
 </body>
 
 </html>

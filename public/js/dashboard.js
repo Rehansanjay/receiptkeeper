@@ -194,9 +194,42 @@
     }
 
     async function deleteReceipt(id) {
-        if (!confirm('Are you sure you want to delete this receipt?')) return;
+        const receipt = allReceipts.find(r => r.id === id);
+        if (!receipt) return;
+
+        const confirmMsg = `Are you sure you want to delete this receipt?\n\nMerchant: ${receipt.merchant_name}\nAmount: $${parseFloat(receipt.amount).toFixed(2)}\n\nThis action cannot be undone.`;
+
+        if (!confirm(confirmMsg)) return;
 
         try {
+            log.info('Deleting receipt: ' + id);
+
+            // First, delete the image from storage if it exists
+            if (receipt.image_url) {
+                try {
+                    // Extract the file path from the URL
+                    const urlParts = receipt.image_url.split('/receipts/');
+                    if (urlParts.length > 1) {
+                        const filePath = urlParts[1].split('?')[0]; // Remove query params
+                        log.info('Deleting image: ' + filePath);
+
+                        const { error: storageError } = await supabase.storage
+                            .from('receipts')
+                            .remove([filePath]);
+
+                        if (storageError) {
+                            log.warn('Could not delete image: ' + storageError.message);
+                        } else {
+                            log.success('Image deleted from storage');
+                        }
+                    }
+                } catch (imgError) {
+                    log.warn('Error deleting image: ' + imgError.message);
+                    // Continue with receipt deletion even if image deletion fails
+                }
+            }
+
+            // Delete the receipt record from database
             const { error } = await supabase
                 .from('receipts')
                 .delete()
@@ -204,12 +237,51 @@
 
             if (error) throw error;
 
-            log.success('Receipt deleted');
+            log.success('Receipt deleted successfully');
+
+            // Show success message
+            showDeleteSuccess(receipt.merchant_name);
+
+            // Reload receipts
             await loadReceipts();
+
         } catch (error) {
             log.error('Error deleting receipt: ' + error.message);
-            alert('Error deleting receipt. Please try again.');
+            alert('Error deleting receipt: ' + error.message);
         }
+    }
+
+    function showDeleteSuccess(merchantName) {
+        // Create and show a toast notification
+        const toast = document.createElement('div');
+        toast.className = 'delete-toast';
+        toast.innerHTML = `
+            <span>✅</span>
+            <span>Deleted receipt from <strong>${merchantName}</strong></span>
+        `;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #059669;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        `;
+
+        document.body.appendChild(toast);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
     function setupLogout() {

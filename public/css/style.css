@@ -643,3 +643,380 @@ footer p {
         -moz-osx-font-smoothing: grayscale;
     }
 }
+
+/* OCR Confidence Indicator - Needs Review */
+.needs-review {
+    border: 2px solid #f59e0b !important;
+    background: #fff7ed !important;
+}
+
+.needs-review:focus {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+}
+
+/* ========== Receipt Card Styles ========== */
+.receipt-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.receipt-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.receipt-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.receipt-info h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.receipt-info .meta {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.receipt-amount {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #059669;
+    white-space: nowrap;
+}
+
+.receipt-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Icon Buttons (View, Delete) */
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: #f3f4f6;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.icon-btn:hover {
+    background: #e5e7eb;
+    transform: scale(1.05);
+}
+
+/* Delete button specific styling */
+.icon-btn[title="Delete"] {
+    background: #fef2f2;
+}
+
+.icon-btn[title="Delete"]:hover {
+    background: #fee2e2;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* View button specific styling */
+.icon-btn[title="View"] {
+    background: #eff6ff;
+}
+
+.icon-btn[title="View"]:hover {
+    background: #dbeafe;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #f9fafb;
+    border-radius: 12px;
+    border: 2px dashed #e5e7eb;
+}
+
+.empty-state h2 {
+    font-size: 1.5rem;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-card h3 {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-card .value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+/* Filters Bar */
+.filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 12px;
+}
+
+.filters-bar select,
+.filters-bar input {
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: white;
+    min-width: 150px;
+}
+
+.filters-bar select:focus,
+.filters-bar input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Responsive Receipt Cards */
+@media (max-width: 640px) {
+    .receipt-card {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .receipt-card>div:last-child {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .receipt-actions {
+        margin-top: 0;
+    }
+
+    .filters-bar {
+        flex-direction: column;
+    }
+
+    .filters-bar select,
+    .filters-bar input {
+        width: 100%;
+    }
+}
+
+/* Toast Notification Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+/* ========== AI SUGGESTION STYLING ========== */
+
+/* AI Notice Banner */
+.ai-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    color: #1e40af;
+}
+
+.ai-notice-icon {
+    font-size: 1.5rem;
+}
+
+.ai-notice-text {
+    flex: 1;
+}
+
+.ai-notice-text strong {
+    color: #1d4ed8;
+}
+
+/* AI Badge (Suggested label) */
+.ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #7c3aed;
+    background: #f3e8ff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Manual Label */
+.manual-label {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* Field Hint */
+.field-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.35rem;
+    font-style: italic;
+}
+
+/* Needs Review - Enhanced */
+.needs-review {
+    border: 2px solid #f59e0b !important;
+    background: #fffbeb !important;
+    animation: pulse-border 2s ease-in-out infinite;
+}
+
+.needs-review:focus {
+    border-color: #d97706 !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+    animation: none;
+}
+
+@keyframes pulse-border {
+
+    0%,
+    100% {
+        border-color: #f59e0b;
+    }
+
+    50% {
+        border-color: #fbbf24;
+    }
+}
+
+/* Auto-filled field styling */
+.auto-filled {
+    background: #f0fdf4 !important;
+    border-color: #86efac !important;
+}
+
+.auto-filled:focus {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15) !important;
+}
+
+/* When user edits an auto-filled field, remove the styling */
+.auto-filled.user-edited {
+    background: #ffffff !important;
+    border-color: #d1d5db !important;
+}
+
+/* High confidence - green checkmark */
+.high-confidence::after {
+    content: '✓';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #22c55e;
+    font-weight: bold;
+}
+
+/* Button icon */
+.btn-icon {
+    margin-right: 0.35rem;
+}
+
+/* Form Group - relative positioning for badges */
+.form-group {
+    position: relative;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .ai-notice {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .ai-badge {
+        display: block;
+        margin-left: 0;
+        margin-top: 0.25rem;
+    }
+}
