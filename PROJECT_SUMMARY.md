@@ -63,10 +63,12 @@ Reciptera is a web-based receipt management system that allows users to upload, 
 - Users can only see their own receipts (Row Level Security)
 - Receipts can be marked as business or personal expenses
 
-### **6. Dashboard**
+### **6. Dashboard & Reporting**
 - Shows all user's uploaded receipts
 - Displays trial status banner if user is on trial
-- Shows receipt thumbnails, merchant names, amounts, and dates
+- **NEW: Total Tax Stats Card** - tracks total tax liability
+- **NEW: Smart Export** - AI-powered CSV export (e.g., "Business receipts from Jan")
+- **NEW: Excel-Compatible** - Exports use proper date formatting and BOM for UTF-8 compatibility
 - Users can view and manage their receipts
 
 ### **7. Application Rebranding**
@@ -364,23 +366,22 @@ Trial system is implemented but there's no way for users to pay after trial ends
 ✅ 14-day trial system  
 ✅ Password security (12+ chars, strength indicator)  
 ✅ Password visibility toggle  
-✅ Receipt upload to storage  
-✅ OCR processing (but low accuracy)  
-✅ Dashboard display  
+✅ Receipt upload to storage with TAX tracking  
+✅ OCR processing (with new fallback logic)  
+✅ Dashboard display with Tax Stats  
+✅ Smart Export (Natural Language to CSV)  
 ✅ Row Level Security  
 ✅ Mobile responsive design  
 
 ### **What's Not Working Well:**
-⚠️ OCR accuracy is poor (60-80%)  
-⚠️ Users must manually correct most fields  
+⚠️ OCR accuracy is moderate (improved with preprocessing but still using Tesseract)  
+⚠️ Users may need to correct complex receipts  
 ⚠️ No payment system after trial  
 ⚠️ Security vulnerabilities not fixed  
 
 ### **What's Missing:**
 ❌ Payment integration  
-❌ Receipt export functionality  
-❌ Search and filtering  
-❌ Expense reports  
+❌ Expense categorization graphs  
 ❌ Better OCR (Google Vision or GPT-4)  
 
 ---
