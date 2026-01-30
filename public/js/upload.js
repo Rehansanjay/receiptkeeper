@@ -825,7 +825,7 @@
                 user_id: user.id,
                 merchant_name: merchantName,
                 amount: amount,
-                tax_amount: taxAmount,
+                // tax_amount: taxAmount, // Column not in DB yet
                 receipt_date: receiptDate,
                 file_path: filePaths.join(','),
                 notes: finalNotes,

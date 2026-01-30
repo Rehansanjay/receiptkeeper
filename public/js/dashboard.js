@@ -7,6 +7,7 @@
 
     let allReceipts = [];
     let currentUser = null;
+    let userCurrency = 'USD'; // Default currency
 
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', async function () {
@@ -43,7 +44,10 @@
             if (data) {
                 const name = data.full_name || data.business_name || 'User';
                 document.getElementById('welcome-message').textContent = `Welcome back, ${name}!`;
-                log.success('Profile loaded: ' + name);
+
+                // Load user's currency preference
+                userCurrency = data.currency || 'USD';
+                log.success('Profile loaded: ' + name + ' | Currency: ' + userCurrency);
             }
         } catch (error) {
             log.warn('Error loading profile: ' + error.message);
@@ -87,9 +91,9 @@
         }).length;
 
         document.getElementById('total-receipts').textContent = totalReceipts;
-        document.getElementById('total-amount').textContent = `$${totalAmount.toFixed(2)}`;
+        document.getElementById('total-amount').textContent = CurrencyFormatter.format(totalAmount, userCurrency);
         document.getElementById('month-receipts').textContent = thisMonth;
-        document.getElementById('business-amount').textContent = `$${businessAmount.toFixed(2)}`;
+        document.getElementById('business-amount').textContent = CurrencyFormatter.format(businessAmount, userCurrency);
     }
 
     function displayReceipts(receipts) {
@@ -107,6 +111,21 @@
                 day: 'numeric'
             });
 
+            // Extract tax from notes if column is empty
+            let taxValue = 0;
+            if (receipt.tax_amount) {
+                taxValue = parseFloat(receipt.tax_amount);
+            } else if (receipt.notes) {
+                const taxMatch = receipt.notes.match(/\[Tax: \$(\d+\.\d{2})\]/);
+                if (taxMatch) {
+                    taxValue = parseFloat(taxMatch[1]);
+                }
+            }
+
+            // Clean notes by removing tax tag for display
+            let cleanNotes = receipt.notes || '';
+            cleanNotes = cleanNotes.replace(/\s*\[Tax: \$\d+\.\d{2}\]\s*/g, '').trim();
+
             return `
                 <div class="receipt-card">
                     <div class="receipt-thumbnail-placeholder" style="width: 80px; height: 80px; background: #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
@@ -117,10 +136,11 @@
                         <div class="meta">
                             ${date} • ${receipt.is_business ? 'Business' : 'Personal'}
                         </div>
-                        ${receipt.notes ? `<div class="meta">${receipt.notes}</div>` : ''}
+                        ${cleanNotes ? `<div class="meta">${cleanNotes}</div>` : ''}
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
-                        <div class="receipt-amount">$${parseFloat(receipt.amount).toFixed(2)}</div>
+                        <div class="receipt-amount">${CurrencyFormatter.format(parseFloat(receipt.amount), userCurrency)}</div>
+                        ${taxValue > 0 ? `<div class="meta" style="font-size: 0.8rem;">Tax: ${CurrencyFormatter.format(taxValue, userCurrency)}</div>` : ''}
                         <div class="receipt-actions">
                             <button class="icon-btn" onclick="window.dashboardFunctions.viewReceipt('${receipt.id}')" title="View">👁️</button>
                             <button class="icon-btn" onclick="window.dashboardFunctions.deleteReceipt('${receipt.id}')" title="Delete">🗑️</button>
@@ -190,14 +210,24 @@
         const receipt = allReceipts.find(r => r.id === id);
         if (!receipt) return;
 
-        alert(`Receipt Details:\n\nMerchant: ${receipt.merchant_name}\nAmount: $${receipt.amount}\nDate: ${receipt.receipt_date}\nType: ${receipt.is_business ? 'Business' : 'Personal'}\nNotes: ${receipt.notes || 'None'}`);
+        let taxValue = 0;
+        if (receipt.tax_amount) {
+            taxValue = parseFloat(receipt.tax_amount);
+        } else if (receipt.notes) {
+            const taxMatch = receipt.notes.match(/\[Tax: \$(\d+\.\d{2})\]/);
+            if (taxMatch) {
+                taxValue = parseFloat(taxMatch[1]);
+            }
+        }
+
+        alert(`Receipt Details:\n\nMerchant: ${receipt.merchant_name}\nAmount: ${CurrencyFormatter.format(parseFloat(receipt.amount), userCurrency)}\nTax: ${CurrencyFormatter.format(taxValue, userCurrency)}\nDate: ${receipt.receipt_date}\nType: ${receipt.is_business ? 'Business' : 'Personal'}\nNotes: ${receipt.notes || 'None'}`);
     }
 
     async function deleteReceipt(id) {
         const receipt = allReceipts.find(r => r.id === id);
         if (!receipt) return;
 
-        const confirmMsg = `Are you sure you want to delete this receipt?\n\nMerchant: ${receipt.merchant_name}\nAmount: $${parseFloat(receipt.amount).toFixed(2)}\n\nThis action cannot be undone.`;
+        const confirmMsg = `Are you sure you want to delete this receipt?\n\nMerchant: ${receipt.merchant_name}\nAmount: ${CurrencyFormatter.format(parseFloat(receipt.amount), userCurrency)}\n\nThis action cannot be undone.`;
 
         if (!confirm(confirmMsg)) return;
 
@@ -318,13 +348,29 @@
     }
 
     function generateCSV(receipts) {
-        const headers = ['Date', 'Merchant', 'Amount', 'Notes'];
-        const rows = receipts.map(r => [
-            r.receipt_date,
-            r.merchant_name,
-            r.amount,
-            r.notes || ''
-        ]);
+        const headers = ['Date', 'Merchant', 'Amount', 'Currency', 'Tax', 'Notes'];
+        const rows = receipts.map(r => {
+            let taxValue = r.tax_amount || 0;
+            if (!taxValue && r.notes) {
+                const taxMatch = r.notes.match(/\[Tax: \$(\d+\.\d{2})\]/);
+                if (taxMatch) {
+                    taxValue = taxMatch[1];
+                }
+            }
+
+            // Clean notes by removing tax tag for CSV export
+            let cleanNotes = r.notes || '';
+            cleanNotes = cleanNotes.replace(/\s*\[Tax: \$\d+\.\d{2}\]\s*/g, '').trim();
+
+            return [
+                r.receipt_date,
+                r.merchant_name,
+                r.amount,
+                userCurrency,
+                taxValue,
+                cleanNotes
+            ];
+        });
 
         const csvContent = [
             headers.join(','),
