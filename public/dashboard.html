@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/currency.js"></script>
     <style>
         * {
             margin: 0;
@@ -539,7 +540,7 @@
 <body>
     <nav>
         <div class="nav-brand">
-            <img src="/images/logo-full.png" alt="Reciptera" style="height: 36px;">
+            <a href="/" style="text-decoration: none; color: white; font-weight: 700; font-size: 1.5rem;">Reciptera</a>
         </div>
         <div class="nav-actions">
             <button class="nav-btn" onclick="window.location.href='/'">Home</button>
@@ -658,6 +659,7 @@
                 let currentUser = null;
                 let allReceipts = [];
                 let userProfile = null;
+                let userCurrency = 'USD'; // Default currency
 
                 // For Delete Logic
                 let receiptToDeleteId = null;
@@ -717,6 +719,10 @@
                         userProfile = data;
                         const name = data.full_name || data.business_name || currentUser.email.split('@')[0];
                         document.getElementById('welcome-msg').textContent = `Welcome back, ${name}!`;
+
+                        // Load user's currency preference
+                        userCurrency = data.currency || 'USD';
+                        console.log('✅ Profile loaded | Currency:', userCurrency);
 
                         // Show trial status
                         showTrialBanner(data);
@@ -834,10 +840,10 @@
                     }).length;
 
                     document.getElementById('total-receipts').textContent = total;
-                    document.getElementById('total-amount').textContent = `$${totalAmount.toFixed(2)}`;
+                    document.getElementById('total-amount').textContent = CurrencyFormatter.format(totalAmount, userCurrency);
                     document.getElementById('month-receipts').textContent = thisMonth;
-                    document.getElementById('business-amount').textContent = `$${businessAmount.toFixed(2)}`;
-                    document.getElementById('total-tax').textContent = `$${totalTax.toFixed(2)}`;
+                    document.getElementById('business-amount').textContent = CurrencyFormatter.format(businessAmount, userCurrency);
+                    document.getElementById('total-tax').textContent = CurrencyFormatter.format(totalTax, userCurrency);
                 }
 
                 // Display receipts
@@ -877,7 +883,7 @@
                                 </div>
                             </div>
                             <div class="receipt-actions-group">
-                                <div class="receipt-amount">$${parseFloat(r.amount || 0).toFixed(2)}</div>
+                                <div class="receipt-amount">${CurrencyFormatter.format(parseFloat(r.amount || 0), userCurrency)}</div>
                                 <button class="delete-btn" onclick="openDeleteModal('${r.id}')" title="Delete Receipt">
                                     🗑️
                                 </button>
