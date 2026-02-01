@@ -69,6 +69,10 @@
 
     // Signup Form Handler
     document.addEventListener('DOMContentLoaded', function () {
+        if (typeof SecurityUtils !== 'undefined') {
+            SecurityUtils.enforceHTTPS();
+        }
+
         const signupForm = document.getElementById('signup-form');
 
         if (signupForm) {
