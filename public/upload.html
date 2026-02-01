@@ -8,10 +8,12 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hiscskqwlgavicihsote.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://hiscskqwlgavicihsote.supabase.co; connect-src 'self' https://hiscskqwlgavicihsote.supabase.co https://cdn.jsdelivr.net;">
     <title>Upload Receipt - Reciptera</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/mobile-enhancements.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/security.js"></script>
     <!-- Tesseract.js for OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
@@ -447,6 +449,9 @@
         <div class="upload-card">
             <h1>Upload Receipt</h1>
             <p>📸 Note for Mobile: Best results with vertical photos.</p>
+
+            <!-- Usage Stats Container (populated by JS) -->
+            <div id="usage-stats"></div>
 
             <div class="upload-area" id="upload-area">
                 <div class="upload-icon">📤</div>

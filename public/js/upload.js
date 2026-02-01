@@ -10,9 +10,134 @@
     if (!window.supabaseClient) window.supabaseClient = supabase;
 
     let selectedFiles = [];
+    let userSubscriptionInfo = null; // Store user's subscription details
+
+    // ========== SUBSCRIPTION TIER MANAGEMENT ==========
+
+    // Fetch user's subscription info
+    async function getUserSubscriptionInfo() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return null;
+
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('subscription_tier, ocr_engine, monthly_upload_count, upload_limit, currency')
+                .eq('id', user.id)
+                .single();
+
+            if (error) {
+                console.error('Error fetching subscription info:', error);
+                return null;
+            }
+
+            console.log('📊 Subscription info:', profile);
+            return profile;
+        } catch (error) {
+            console.error('Error getting subscription info:', error);
+            return null;
+        }
+    }
+
+    // Check if user can upload (within limits)
+    function canUpload(subscriptionInfo) {
+        if (!subscriptionInfo) return false;
+        return subscriptionInfo.monthly_upload_count < subscriptionInfo.upload_limit;
+    }
+
+    // Display usage stats on the page
+    function displayUsageStats(subscriptionInfo) {
+        if (!subscriptionInfo) return;
+
+        const usageContainer = document.getElementById('usage-stats');
+        if (!usageContainer) return;
+
+        const remaining = subscriptionInfo.upload_limit - subscriptionInfo.monthly_upload_count;
+        const percentUsed = (subscriptionInfo.monthly_upload_count / subscriptionInfo.upload_limit) * 100;
+
+        // Determine tier badge color
+        const tierColors = {
+            'free': '#6B7280',
+            'pro': '#3B82F6',
+            'premium': '#8B5CF6'
+        };
+        const tierColor = tierColors[subscriptionInfo.subscription_tier] || '#6B7280';
+
+        usageContainer.innerHTML = `
+            <div style="background: white; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <div>
+                        <span style="background: ${tierColor}; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                            ${subscriptionInfo.subscription_tier}
+                        </span>
+                        <span style="margin-left: 0.5rem; color: #6B7280; font-size: 0.875rem;">
+                            ${subscriptionInfo.ocr_engine === 'ocrspace' ? '🤖 Premium OCR' : '📝 Basic OCR'}
+                        </span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.875rem; color: #6B7280;">This month</div>
+                        <div style="font-size: 1.25rem; font-weight: 600; color: ${remaining <= 2 ? '#DC2626' : '#111827'};">
+                            ${remaining} / ${subscriptionInfo.upload_limit}
+                        </div>
+                    </div>
+                </div>
+                <div style="background: #E5E7EB; border-radius: 9999px; height: 8px; overflow: hidden;">
+                    <div style="background: ${percentUsed >= 90 ? '#DC2626' : '#3B82F6'}; height: 100%; width: ${percentUsed}%; transition: width 0.3s;"></div>
+                </div>
+                ${subscriptionInfo.subscription_tier === 'free' && remaining <= 5 ? `
+                    <div style="margin-top: 0.75rem; padding: 0.75rem; background: #FEF3C7; border-radius: 6px; border-left: 3px solid #F59E0B;">
+                        <div style="font-size: 0.875rem; color: #92400E;">
+                            ⚠️ Running low on uploads! <a href="/pricing.html" style="color: #D97706; font-weight: 600; text-decoration: underline;">Upgrade to Pro</a> for 100 uploads/month with AI-powered OCR.
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    // Show upgrade modal when limit reached
+    function showUpgradeModal(message) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; margin: 1rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🚀</div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">Upgrade Required</h2>
+                    <p style="color: #6B7280; margin-bottom: 1.5rem;">${message}</p>
+                    
+                    <div style="background: #F3F4F6; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; text-align: left;">
+                        <div style="font-weight: 600; color: #111827; margin-bottom: 0.5rem;">✨ Upgrade to Pro and get:</div>
+                        <ul style="color: #6B7280; font-size: 0.875rem; margin-left: 1.5rem;">
+                            <li>100 uploads per month</li>
+                            <li>AI-powered OCR (95%+ accuracy)</li>
+                            <li>Minimal manual corrections</li>
+                            <li>Priority support</li>
+                        </ul>
+                        <div style="margin-top: 0.75rem; font-size: 1.25rem; font-weight: 700; color: #3B82F6;">Only $19/month or ₹199/month</div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button onclick="this.closest('div[style*=fixed]').remove()" style="flex: 1; padding: 0.75rem; border: 1px solid #D1D5DB; border-radius: 6px; background: white; color: #374151; font-weight: 600; cursor: pointer;">
+                            Maybe Later
+                        </button>
+                        <a href="/pricing.html" style="flex: 1; padding: 0.75rem; border-radius: 6px; background: #3B82F6; color: white; font-weight: 600; text-decoration: none; text-align: center;">
+                            View Plans
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
 
     document.addEventListener('DOMContentLoaded', async function () {
         console.log('📤 Upload page loading...');
+
+        // Enforce HTTPS in production
+        SecurityUtils.enforceHTTPS();
 
         // Check authentication
         const { data: { session } } = await supabase.auth.getSession();
@@ -23,6 +148,13 @@
         }
 
         console.log('✅ User authenticated');
+
+        // Fetch subscription info
+        userSubscriptionInfo = await getUserSubscriptionInfo();
+        if (userSubscriptionInfo) {
+            displayUsageStats(userSubscriptionInfo);
+        }
+
         setupUploadHandlers();
         setupLogout();
     });
@@ -71,8 +203,37 @@
         });
     }
 
-    function handleFiles(files) {
-        selectedFiles = Array.from(files);
+    async function handleFiles(files) {
+        // Check upload limit before processing
+        if (!userSubscriptionInfo) {
+            userSubscriptionInfo = await getUserSubscriptionInfo();
+        }
+
+        if (!canUpload(userSubscriptionInfo)) {
+            const tier = userSubscriptionInfo.subscription_tier;
+            const limit = userSubscriptionInfo.upload_limit;
+            showUpgradeModal(`You've used all ${limit} uploads this month. Upgrade to continue uploading receipts!`);
+            return;
+        }
+
+        const validatedFiles = [];
+        const errors = [];
+
+        for (const file of files) {
+            try {
+                SecurityUtils.validateFile(file);
+                validatedFiles.push(file);
+            } catch (error) {
+                errors.push(error.message);
+            }
+        }
+
+        if (errors.length > 0) {
+            alert(errors.join('\n'));
+            return;
+        }
+
+        selectedFiles = validatedFiles;
         displayPreviews();
 
         // DON'T show form yet - wait for OCR to complete
@@ -558,6 +719,58 @@
         }, { once: true }); // Only track first edit
     }
 
+    // ========== GOOGLE VISION API OCR (PRO/PREMIUM USERS) ==========
+
+    async function performOCRSpaceOCR(imageFile) {
+        try {
+            console.log('🤖 Using OCR.space API for OCR...');
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('image', imageFile);
+
+            // Get auth token
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                throw new Error('No session found');
+            }
+
+            // Call Supabase Edge Function
+            const response = await fetch(
+                `${SUPABASE_URL}/functions/v1/ocr-google`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                    },
+                    body: formData
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Google Vision API failed');
+            }
+
+            const result = await response.json();
+            console.log('✅ Google Vision result:', result);
+
+            return {
+                success: true,
+                data: result.data,
+                usage: result.usage
+            };
+        } catch (error) {
+            console.error('❌ Google Vision error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // ========== OCR PROCESSING (ROUTES TO CORRECT ENGINE) ==========
+
     async function processReceiptWithOCR(imageFile) {
         const ocrLoading = document.getElementById('ocr-loading');
         const ocrProgressFill = document.getElementById('ocr-progress-fill');
@@ -571,48 +784,91 @@
 
             console.log('🔍 Starting OCR processing...');
 
-            // STEP 1: Preprocess image for better OCR accuracy
-            const processedImage = await preprocessImage(imageFile);
-            ocrProgressFill.style.width = '15%';
-            ocrStatus.textContent = 'Initializing smart capture...';
+            // Determine which OCR engine to use
+            const useOCRSpace = userSubscriptionInfo && userSubscriptionInfo.ocr_engine === 'ocrspace';
 
-            // STEP 2: Process image with Tesseract
-            const result = await Tesseract.recognize(
-                processedImage,
-                'eng',
-                {
-                    logger: function (m) {
-                        if (m.status === 'recognizing text') {
-                            const progress = Math.round(m.progress * 100);
-                            ocrProgressFill.style.width = `${15 + (progress * 0.7)}%`;
-                            ocrStatus.textContent = `Reading receipt... ${progress}%`;
+            let extractedData = null;
+
+            if (useOCRSpace) {
+                // PRO/PREMIUM: Use OCR.space API
+                ocrStatus.textContent = '🤖 Using premium OCR...';
+                ocrProgressFill.style.width = '15%';
+
+                const result = await performOCRSpaceOCR(imageFile);
+
+                if (result.success) {
+                    ocrProgressFill.style.width = '90%';
+                    ocrStatus.textContent = 'Extracting data...';
+
+                    extractedData = result.data;
+
+                    // Update usage stats
+                    if (result.usage) {
+                        userSubscriptionInfo.monthly_upload_count = result.usage.count;
+                        displayUsageStats(userSubscriptionInfo);
+                    }
+                } else {
+                    throw new Error(result.error);
+                }
+            } else {
+                // FREE: Use Tesseract OCR
+                ocrStatus.textContent = '📝 Using basic OCR...';
+                ocrProgressFill.style.width = '15%';
+
+                // STEP 1: Preprocess image for better OCR accuracy
+                const processedImage = await preprocessImage(imageFile);
+                ocrProgressFill.style.width = '20%';
+                ocrStatus.textContent = 'Initializing smart capture...';
+
+                // STEP 2: Process image with Tesseract
+                const result = await Tesseract.recognize(
+                    processedImage,
+                    'eng',
+                    {
+                        logger: function (m) {
+                            if (m.status === 'recognizing text') {
+                                const progress = Math.round(m.progress * 100);
+                                ocrProgressFill.style.width = `${20 + (progress * 0.7)}%`;
+                                ocrStatus.textContent = `Reading receipt... ${progress}%`;
+                            }
                         }
                     }
-                }
-            );
+                );
 
-            ocrProgressFill.style.width = '90%';
-            ocrStatus.textContent = 'Extracting data...';
+                ocrProgressFill.style.width = '90%';
+                ocrStatus.textContent = 'Extracting data...';
 
-            console.log('📄 OCR Text extracted:', result.data.text);
+                console.log('📄 OCR Text extracted:', result.data.text);
 
-            // STEP 3: Parse using improved extraction functions
-            const lines = getLines(result.data.text);
-            console.log('📋 Parsed lines:', lines);
+                // STEP 3: Parse using improved extraction functions
+                const lines = getLines(result.data.text);
+                console.log('📋 Parsed lines:', lines);
 
-            const merchant = extractMerchant(lines);
-            const total = extractTotal(lines);
-            const date = extractDate(lines);
-            const tax = extractTax(lines);
+                const merchant = extractMerchant(lines);
+                const total = extractTotal(lines);
+                const date = extractDate(lines);
+                const tax = extractTax(lines);
 
-            console.log('✅ Extracted data:', { merchant, total, date, tax });
+                extractedData = {
+                    merchant: merchant || 'Unknown',
+                    amount: total || '0.00',
+                    date: date || new Date().toISOString().split('T')[0],
+                    confidence: {
+                        merchant: merchantConfidence(merchant),
+                        amount: totalConfidence(total),
+                        date: dateConfidence(date)
+                    }
+                };
+
+                console.log('✅ Extracted data:', extractedData);
+            }
 
             // Store AI suggestions for tracking
             aiSuggestions = {
-                merchant: merchant || null,
-                amount: total || null,
-                tax: tax || null,
-                date: date || null
+                merchant: extractedData.merchant || null,
+                amount: extractedData.amount || null,
+                tax: null, // Tax not extracted by Google Vision yet
+                date: extractedData.date || null
             };
 
             // STEP 4: Get form elements
@@ -625,29 +881,29 @@
             let fieldsAutoFilled = 0;
 
             // Fill Merchant
-            if (merchant) {
-                merchantInput.value = merchant;
+            if (extractedData.merchant && extractedData.merchant !== 'Unknown') {
+                merchantInput.value = extractedData.merchant;
                 merchantInput.classList.add('auto-filled');
-                showStatus(merchantInput, merchantConfidence(merchant), 'merchant');
-                trackUserEdit(merchantInput, 'merchant', merchant);
+                showStatus(merchantInput, extractedData.confidence?.merchant || 0.9, 'merchant');
+                trackUserEdit(merchantInput, 'merchant', extractedData.merchant);
                 fieldsAutoFilled++;
             }
 
             // Fill Amount
-            if (total) {
-                amountInput.value = total;
+            if (extractedData.amount && extractedData.amount !== '0.00') {
+                amountInput.value = extractedData.amount;
                 amountInput.classList.add('auto-filled');
-                showStatus(amountInput, totalConfidence(total), 'amount');
-                trackUserEdit(amountInput, 'amount', total);
+                showStatus(amountInput, extractedData.confidence?.amount || 0.9, 'amount');
+                trackUserEdit(amountInput, 'amount', extractedData.amount);
                 fieldsAutoFilled++;
             }
 
             // Fill Date
-            if (date) {
-                dateInput.value = date;
+            if (extractedData.date) {
+                dateInput.value = extractedData.date;
                 dateInput.classList.add('auto-filled');
-                showStatus(dateInput, dateConfidence(date), 'date');
-                trackUserEdit(dateInput, 'date', date);
+                showStatus(dateInput, extractedData.confidence?.date || 0.9, 'date');
+                trackUserEdit(dateInput, 'date', extractedData.date);
                 fieldsAutoFilled++;
             }
 
@@ -733,17 +989,33 @@
                 previewItem.className = 'preview-item';
 
                 if (file.type.startsWith('image/')) {
-                    previewItem.innerHTML = `
-                        <img src="${e.target.result}" alt="Preview">
-                        <button class="remove-btn" onclick="window.uploadFunctions.removeFile(${index})">×</button>
-                    `;
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = 'Preview';
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    previewItem.appendChild(img);
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.textContent = '×';
+                    removeBtn.onclick = function () { window.uploadFunctions.removeFile(index); };
+                    previewItem.appendChild(removeBtn);
                 } else {
-                    previewItem.innerHTML = `
-                        <div style="height: 150px; display: flex; align-items: center; justify-content: center; background: #f3f4f6;">
-                            <span style="font-size: 2rem;">📄</span>
-                        </div>
-                        <button class="remove-btn" onclick="window.uploadFunctions.removeFile(${index})">×</button>
-                    `;
+                    const placeholder = document.createElement('div');
+                    placeholder.style.cssText = 'height: 150px; display: flex; align-items: center; justify-content: center; background: #f3f4f6;';
+                    const icon = document.createElement('span');
+                    icon.style.cssText = 'font-size: 2rem;';
+                    icon.textContent = '📄';
+                    placeholder.appendChild(icon);
+                    previewItem.appendChild(placeholder);
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.textContent = '×';
+                    removeBtn.onclick = function () { window.uploadFunctions.removeFile(index); };
+                    previewItem.appendChild(removeBtn);
                 }
 
                 previewContainer.appendChild(previewItem);
@@ -804,7 +1076,9 @@
             const filePaths = [];
             for (const file of selectedFiles) {
                 const fileExt = file.name.split('.').pop();
-                const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+                const sanitizedName = SecurityUtils.sanitizeFilename(file.name);
+                const randomPart = Math.random().toString(36).substr(2, 9);
+                const fileName = `${user.id}/${Date.now()}_${randomPart}.${fileExt}`;
 
                 const { data, error } = await supabase.storage
                     .from('receipts')
