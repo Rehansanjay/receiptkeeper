@@ -17,84 +17,80 @@ Before you begin, ensure you have:
 
 ---
 
-## 🔑 Part 1: Google Vision API Setup
+## 🔑 Part 1: OCR.space API Setup
 
-### Step 1.1: Create a Google Cloud Project
+### Step 1.1: Sign Up for Free OCR.space API Key
 
-1. Navigate to [Google Cloud Console](https://console.cloud.google.com/)
-2. Click the **project dropdown** at the top of the page
-3. Click **"New Project"** button
-4. Enter project details:
-   - **Project name:** `reciptera-ocr` (or your preferred name)
-   - **Organization:** Leave as default (if applicable)
-5. Click **"Create"**
-6. Wait for the project creation notification (~10-15 seconds)
-7. **Select your new project** from the project dropdown
+> [!TIP]
+> OCR.space provides **25,000 free requests per month** with **no credit card required**. This is 25x more than Google Vision's free tier!
 
-### Step 1.2: Enable Cloud Vision API
-
-1. In the Google Cloud Console search bar (top), type: `Vision API`
-2. Click on **"Cloud Vision API"** from the results
-3. Click the blue **"Enable"** button
-4. Wait for activation (~30-60 seconds)
-5. You should see "API enabled" confirmation
-
-### Step 1.3: Create and Configure API Key
-
-1. Navigate to **"APIs & Services"** → **"Credentials"** (left sidebar)
-2. Click **"+ CREATE CREDENTIALS"** button (top)
-3. Select **"API Key"** from the dropdown
-4. A dialog will appear with your new API key
-5. **DO NOT close this dialog yet** - click **"Edit API key"** or **"Restrict Key"**
-6. Configure API key restrictions:
-   - **Name:** `Receipt OCR API Key` (optional but recommended)
-   - **Application restrictions:** Select **"None"** (or configure as needed)
-   - **API restrictions:** 
-     - Select **"Restrict key"**
-     - Click **"Select APIs"** dropdown
-     - Search for and check **"Cloud Vision API"**
-     - Uncheck all other APIs
-7. Click **"Save"** at the bottom
-8. **Copy your API key** - it looks like: `AIzaSyC-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
-9. **Store it securely** - you'll need it in Part 2
+1. Navigate to [OCR.space API Registration](https://ocr.space/ocrapi)
+2. Scroll down to the **"Free OCR API"** section
+3. Enter your **email address**
+4. Click **"Register"** button
+5. Check your email inbox for the API key
+6. **Copy your API key** - it looks like: `K12345678901234`
 
 > [!IMPORTANT]
 > Keep your API key secure. Never commit it to version control or share it publicly.
 
-### Step 1.4: Enable Billing Account
+### Step 1.2: Verify API Key (Optional but Recommended)
 
-> [!WARNING]
-> Google Vision API **requires** a billing account to function, even for free tier usage. However, you receive **1,000 free requests per month** before any charges apply.
+Test your API key to ensure it's working:
 
-1. In Google Cloud Console, click **"Billing"** in the left navigation menu
-2. If you don't have a billing account:
-   - Click **"Link a billing account"** or **"Create billing account"**
-   - Follow the prompts to add a credit/debit card
-   - Complete the billing setup
-3. If you already have a billing account:
-   - Ensure it's linked to your `reciptera-ocr` project
-   - Click **"Link a billing account"** if needed
+1. Open PowerShell
+2. Run this test command (replace `YOUR_API_KEY` with your actual key):
 
-### Step 1.5: Set Up Billing Alerts (Highly Recommended)
+```powershell
+$headers = @{
+    "apikey" = "YOUR_API_KEY"
+}
 
-1. Go to **"Billing"** → **"Budgets & alerts"**
-2. Click **"Create Budget"**
-3. Configure budget:
-   - **Name:** `Receipt OCR Monthly Budget`
-   - **Projects:** Select `reciptera-ocr`
-   - **Budget amount:** `$10.00` per month
-4. Set up alert thresholds:
-   - Add alert at **50%** ($5.00)
-   - Add alert at **90%** ($9.00)
-   - Add alert at **100%** ($10.00)
-5. Add your **email address** for notifications
-6. Click **"Finish"**
+Invoke-RestMethod -Uri "https://api.ocr.space/parse/imageurl?url=https://ocr.space/Content/Images/receipt-ocr-original.jpg" `
+    -Method Get `
+    -Headers $headers
+```
 
-**Expected Monthly Costs:**
-- **Free tier users:** $0 (uses Tesseract.js locally)
-- **Pro tier (100 uploads/user):** ~$0.15 per user per month
-- **Premium tier (300 uploads/user):** ~$0.45 per user per month
-- **First 1,000 requests:** Free across all tiers
+**Expected output:**
+```json
+{
+  "ParsedResults": [
+    {
+      "ParsedText": "...",
+      "ErrorMessage": "",
+      "FileParseExitCode": 1
+    }
+  ],
+  "IsErroredOnProcessing": false
+}
+```
+
+If you see `"IsErroredOnProcessing": false`, your API key is working correctly!
+
+### Step 1.3: Understanding OCR.space Features
+
+**What You Get (FREE):**
+- ✅ **25,000 requests/month** (vs Google's 1,000)
+- ✅ **No credit card required**
+- ✅ **No billing setup needed**
+- ✅ **Excellent accuracy** for printed receipts (90-95%)
+- ✅ **Multiple image formats** (JPG, PNG, PDF, GIF)
+- ✅ **Fast processing** (~2-3 seconds per receipt)
+
+**API Limits:**
+- Maximum file size: 1MB (perfect for receipts)
+- Rate limit: 10 requests per second
+- Supported languages: 24+ languages
+
+**Comparison with Google Vision:**
+
+| Feature | OCR.space (FREE) | Google Vision (FREE) |
+|---------|------------------|----------------------|
+| **Monthly Requests** | 25,000 | 1,000 |
+| **Billing Required** | ❌ No | ✅ Yes |
+| **Receipt Accuracy** | 90-95% | 95-98% |
+| **Setup Time** | 2 minutes | 15-20 minutes |
+| **Cost After Free Tier** | $0.0006/request | $0.0015/request |
 
 ---
 
@@ -173,17 +169,17 @@ Mode                 LastWriteTime         Length Name
 d-----                                            ocr-google
 ```
 
-### Step 2.5: Set Google Vision API Key as Supabase Secret
+### Step 2.5: Set OCR.space API Key as Supabase Secret
 
-1. Set the secret (replace `YOUR_API_KEY` with your actual key from Step 1.3):
+1. Set the secret (replace `YOUR_API_KEY` with your actual key from Step 1.1):
 ```powershell
-supabase secrets set GOOGLE_VISION_API_KEY=AIzaSyC-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+supabase secrets set OCR_SPACE_API_KEY=K12345678901234
 ```
 
 **Expected output:**
 ```
-Setting secret GOOGLE_VISION_API_KEY...
-Secret GOOGLE_VISION_API_KEY set successfully.
+Setting secret OCR_SPACE_API_KEY...
+Secret OCR_SPACE_API_KEY set successfully.
 ```
 
 > [!TIP]
@@ -200,7 +196,7 @@ supabase secrets list
 ┌──────────────────────────┬────────────────────────────┐
 │ NAME                     │ VALUE                      │
 ├──────────────────────────┼────────────────────────────┤
-│ GOOGLE_VISION_API_KEY    │ ************************** │
+│ OCR_SPACE_API_KEY        │ ************************** │
 └──────────────────────────┴────────────────────────────┘
 ```
 
@@ -467,13 +463,12 @@ WHERE email = 'your-test-email@example.com';
 
 After completing all steps, verify you have:
 
-- ✅ **Google Cloud Project** created (`reciptera-ocr`)
-- ✅ **Cloud Vision API** enabled
-- ✅ **API Key** created and restricted to Vision API only
-- ✅ **Billing Account** linked with alerts configured
+- ✅ **OCR.space Account** created (free tier)
+- ✅ **OCR.space API Key** obtained via email
+- ✅ **API Key** tested and verified working
 - ✅ **Supabase CLI** installed and authenticated
 - ✅ **Project Linked** to Supabase (`hiscskqwlgavicihsote`)
-- ✅ **Secret Set** (`GOOGLE_VISION_API_KEY`)
+- ✅ **Secret Set** (`OCR_SPACE_API_KEY`)
 - ✅ **Edge Function** deployed (`ocr-google`)
 - ✅ **Edge Function** tested successfully
 - ✅ **Database Migration** completed (subscription columns exist)
@@ -490,10 +485,9 @@ After completing all steps, verify you have:
 **Symptoms:** Edge function returns 403 or "Invalid API key" error
 
 **Solutions:**
-1. Verify API key is restricted to **Cloud Vision API only**:
-   - Go to Google Cloud Console → APIs & Services → Credentials
-   - Click on your API key
-   - Check "API restrictions" section
+1. Verify API key is correct:
+   - Check your email for the OCR.space API key
+   - Ensure you copied the entire key (no extra spaces)
 2. Confirm secret is set correctly:
    ```powershell
    supabase secrets list
@@ -503,16 +497,15 @@ After completing all steps, verify you have:
    supabase functions deploy ocr-google
    ```
 
-### Issue: "Billing not enabled" Error
+### Issue: "Rate limit exceeded" Error
 
-**Symptoms:** API calls fail with billing-related error messages
+**Symptoms:** API calls fail with rate limit error messages
 
 **Solutions:**
-1. Verify billing account is linked:
-   - Google Cloud Console → Billing
-   - Ensure your project appears under the billing account
-2. Check billing account status is "Active"
-3. Wait 5-10 minutes after linking billing account (propagation delay)
+1. OCR.space free tier has a limit of 10 requests per second
+2. Check if you've exceeded the 25,000 monthly requests
+3. Implement request throttling in your application
+4. Consider upgrading to OCR.space paid tier if needed
 
 ### Issue: Edge Function Deployment Fails
 
@@ -555,7 +548,7 @@ After completing all steps, verify you have:
 
 ### Issue: Secrets Not Accessible in Edge Function
 
-**Symptoms:** Edge function can't read `GOOGLE_VISION_API_KEY`
+**Symptoms:** Edge function can't read `OCR_SPACE_API_KEY`
 
 **Solutions:**
 1. Verify secret is set:
@@ -564,9 +557,9 @@ After completing all steps, verify you have:
    ```
 2. In your Edge Function code, access it correctly:
    ```typescript
-   const apiKey = Deno.env.get('GOOGLE_VISION_API_KEY');
+   const apiKey = Deno.env.get('OCR_SPACE_API_KEY');
    if (!apiKey) {
-     throw new Error('GOOGLE_VISION_API_KEY not set');
+     throw new Error('OCR_SPACE_API_KEY not set');
    }
    ```
 3. Redeploy after setting secrets:

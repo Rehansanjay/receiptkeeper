@@ -41,7 +41,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Step 4: Create function to set tier-based defaults
-CREATE OR REPLACE FUNCTION set_tier_defaults()
+CREATE OR REPLACE FUNCTION set_subscription_defaults()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Set upload limits and OCR engine based on tier
@@ -50,10 +50,17 @@ BEGIN
     NEW.ocr_engine := 'tesseract';
   ELSIF NEW.subscription_tier = 'pro' THEN
     NEW.upload_limit := 100;
-    NEW.ocr_engine := 'google-vision';
+    NEW.ocr_engine := 'ocrspace';
   ELSIF NEW.subscription_tier = 'premium' THEN
     NEW.upload_limit := 300;
-    NEW.ocr_engine := 'google-vision';
+    NEW.ocr_engine := 'ocrspace';
+  END IF;
+  
+  -- Reset monthly count if it's a new month
+  IF NEW.last_reset_date IS NULL OR 
+     DATE_TRUNC('month', NEW.last_reset_date) < DATE_TRUNC('month', CURRENT_DATE) THEN
+    NEW.monthly_upload_count := 0;
+    NEW.last_reset_date := CURRENT_DATE;
   END IF;
   
   RETURN NEW;
@@ -66,7 +73,7 @@ DROP TRIGGER IF EXISTS set_tier_defaults_trigger ON profiles;
 CREATE TRIGGER set_tier_defaults_trigger
 BEFORE INSERT OR UPDATE OF subscription_tier ON profiles
 FOR EACH ROW
-EXECUTE FUNCTION set_tier_defaults();
+EXECUTE FUNCTION set_subscription_defaults();
 
 -- Step 6: Update existing users to have proper defaults
 UPDATE profiles 

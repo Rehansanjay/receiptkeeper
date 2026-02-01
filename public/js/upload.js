@@ -71,7 +71,7 @@
                             ${subscriptionInfo.subscription_tier}
                         </span>
                         <span style="margin-left: 0.5rem; color: #6B7280; font-size: 0.875rem;">
-                            ${subscriptionInfo.ocr_engine === 'google-vision' ? '🤖 AI-Powered OCR' : '📝 Basic OCR'}
+                            ${subscriptionInfo.ocr_engine === 'ocrspace' ? '🤖 Premium OCR' : '📝 Basic OCR'}
                         </span>
                     </div>
                     <div style="text-align: right;">
@@ -721,9 +721,9 @@
 
     // ========== GOOGLE VISION API OCR (PRO/PREMIUM USERS) ==========
 
-    async function performGoogleVisionOCR(imageFile) {
+    async function performOCRSpaceOCR(imageFile) {
         try {
-            console.log('🤖 Using Google Vision API for OCR...');
+            console.log('🤖 Using OCR.space API for OCR...');
 
             // Create form data
             const formData = new FormData();
@@ -785,16 +785,16 @@
             console.log('🔍 Starting OCR processing...');
 
             // Determine which OCR engine to use
-            const useGoogleVision = userSubscriptionInfo && userSubscriptionInfo.ocr_engine === 'google-vision';
+            const useOCRSpace = userSubscriptionInfo && userSubscriptionInfo.ocr_engine === 'ocrspace';
 
             let extractedData = null;
 
-            if (useGoogleVision) {
-                // PRO/PREMIUM: Use Google Vision API
-                ocrStatus.textContent = '🤖 Using AI-powered OCR...';
+            if (useOCRSpace) {
+                // PRO/PREMIUM: Use OCR.space API
+                ocrStatus.textContent = '🤖 Using premium OCR...';
                 ocrProgressFill.style.width = '15%';
 
-                const result = await performGoogleVisionOCR(imageFile);
+                const result = await performOCRSpaceOCR(imageFile);
 
                 if (result.success) {
                     ocrProgressFill.style.width = '90%';

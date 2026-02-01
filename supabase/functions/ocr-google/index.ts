@@ -54,12 +54,12 @@ serve(async (req) => {
             )
         }
 
-        // Verify user has access to Google Vision (Pro or Premium tier)
-        if (profile.ocr_engine !== 'google-vision') {
+        // Verify user has access to OCR.space (Pro or Premium tier)
+        if (profile.ocr_engine !== 'ocrspace') {
             return new Response(
                 JSON.stringify({
                     error: 'Upgrade required',
-                    message: 'Google Vision OCR is only available for Pro and Premium users',
+                    message: 'Premium OCR is only available for Pro and Premium users',
                     current_tier: profile.subscription_tier
                 }),
                 { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -99,52 +99,50 @@ serve(async (req) => {
             )
         )
 
-        // Call Google Vision API
-        const visionApiKey = Deno.env.get('GOOGLE_VISION_API_KEY')
-        if (!visionApiKey) {
+        // Call OCR.space API
+        const ocrApiKey = Deno.env.get('OCR_SPACE_API_KEY')
+        if (!ocrApiKey) {
             return new Response(
-                JSON.stringify({ error: 'Google Vision API key not configured' }),
+                JSON.stringify({ error: 'OCR.space API key not configured' }),
                 { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
 
-        const visionResponse = await fetch(
-            `https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`,
+        // Prepare form data for OCR.space
+        const ocrFormData = new FormData()
+        ocrFormData.append('base64Image', `data:${imageFile.type};base64,${base64Image}`)
+        ocrFormData.append('language', 'eng')
+        ocrFormData.append('isOverlayRequired', 'false')
+        ocrFormData.append('detectOrientation', 'true')
+        ocrFormData.append('scale', 'true')
+        ocrFormData.append('OCREngine', '2') // Engine 2 is better for receipts
+
+        const ocrResponse = await fetch(
+            'https://api.ocr.space/parse/image',
             {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'apikey': ocrApiKey,
                 },
-                body: JSON.stringify({
-                    requests: [
-                        {
-                            image: {
-                                content: base64Image,
-                            },
-                            features: [
-                                {
-                                    type: 'DOCUMENT_TEXT_DETECTION',
-                                    maxResults: 1,
-                                },
-                            ],
-                        },
-                    ],
-                }),
+                body: ocrFormData
             }
         )
 
-        const visionData = await visionResponse.json()
+        const ocrData = await ocrResponse.json()
 
-        if (!visionResponse.ok) {
-            console.error('Vision API error:', visionData)
+        if (!ocrResponse.ok || ocrData.IsErroredOnProcessing) {
+            console.error('OCR.space API error:', ocrData)
             return new Response(
-                JSON.stringify({ error: 'Vision API error', details: visionData }),
+                JSON.stringify({
+                    error: 'OCR API error',
+                    details: ocrData.ErrorMessage || ocrData.ParsedResults?.[0]?.ErrorMessage || 'Unknown error'
+                }),
                 { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
 
-        // Extract text from Vision API response
-        const fullText = visionData.responses?.[0]?.fullTextAnnotation?.text || ''
+        // Extract text from OCR.space response
+        const fullText = ocrData.ParsedResults?.[0]?.ParsedText || ''
 
         if (!fullText) {
             return new Response(
