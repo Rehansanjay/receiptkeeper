@@ -5,12 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Reciptera</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hiscskqwlgavicihsote.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://hiscskqwlgavicihsote.supabase.co; connect-src 'self' https://hiscskqwlgavicihsote.supabase.co https://cdn.jsdelivr.net;">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/security.js"></script>
     <script src="/js/currency.js"></script>
     <style>
         * {
@@ -874,24 +872,19 @@
                         });
                         const badgeClass = r.is_business ? 'badge-business' : 'badge-personal';
                         const badgeText = r.is_business ? 'Business' : 'Personal';
-                        const merchantName = SecurityUtils.escapeHtml(r.merchant_name || 'Unknown Merchant');
-                        const receiptId = SecurityUtils.escapeHtml(r.id);
-                        const safeDate = SecurityUtils.escapeHtml(date);
-                        const safeBadgeText = SecurityUtils.escapeHtml(badgeText);
-                        const safeAmount = CurrencyFormatter.format(parseFloat(r.amount || 0), userCurrency);
 
                         return `
                         <div class="receipt-item">
                             <div class="receipt-info">
-                                <h4>${merchantName}</h4>
+                                <h4>${r.merchant_name || 'Unknown Merchant'}</h4>
                                 <div class="receipt-meta">
-                                    <span>📅 ${safeDate}</span>
-                                    <span class="receipt-badge ${badgeClass}">${safeBadgeText}</span>
+                                    <span>📅 ${date}</span>
+                                    <span class="receipt-badge ${badgeClass}">${badgeText}</span>
                                 </div>
                             </div>
                             <div class="receipt-actions-group">
-                                <div class="receipt-amount">${safeAmount}</div>
-                                <button class="delete-btn" onclick="openDeleteModal('${receiptId}')" title="Delete Receipt">
+                                <div class="receipt-amount">${CurrencyFormatter.format(parseFloat(r.amount || 0), userCurrency)}</div>
+                                <button class="delete-btn" onclick="openDeleteModal('${r.id}')" title="Delete Receipt">
                                     🗑️
                                 </button>
                             </div>
