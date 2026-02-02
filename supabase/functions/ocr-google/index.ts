@@ -5,9 +5,14 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': '*', // TODO: Replace with your domain before production: 'https://yourdomain.com'
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+// PRODUCTION SECURITY: Before deploying to production, replace the CORS origin above with your actual domain
+// Example: 'Access-Control-Allow-Origin': 'https://reciptera.com'
+// This prevents other websites from calling your API
+
 
 serve(async (req) => {
     // Handle CORS preflight requests
@@ -16,31 +21,45 @@ serve(async (req) => {
     }
 
     try {
+        // Log incoming request for debugging
+        console.log('📥 OCR request received')
+        const authHeader = req.headers.get('Authorization')
+        console.log('🔑 Auth header present:', !!authHeader)
+
         // Initialize Supabase client
         const supabaseClient = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_ANON_KEY') ?? '',
             {
                 global: {
-                    headers: { Authorization: req.headers.get('Authorization')! },
+                    headers: { Authorization: authHeader! },
                 },
             }
         )
 
         // Get authenticated user
+        console.log('👤 Attempting to get user...')
         const {
             data: { user },
             error: userError,
         } = await supabaseClient.auth.getUser()
 
         if (userError || !user) {
+            console.error('❌ Auth error:', userError?.message || 'No user')
             return new Response(
-                JSON.stringify({ error: 'Unauthorized' }),
+                JSON.stringify({
+                    error: 'Unauthorized',
+                    details: userError?.message || 'User authentication failed',
+                    hint: 'Please logout and login again to refresh your session'
+                }),
                 { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
 
+        console.log('✅ User authenticated:', user.id)
+
         // Get user's subscription info
+        console.log('📊 Fetching profile...')
         const { data: profile, error: profileError } = await supabaseClient
             .from('profiles')
             .select('subscription_tier, ocr_engine, monthly_upload_count, upload_limit')
@@ -48,11 +67,18 @@ serve(async (req) => {
             .single()
 
         if (profileError || !profile) {
+            console.error('❌ Profile error:', profileError?.message || 'No profile')
             return new Response(
-                JSON.stringify({ error: 'Profile not found' }),
+                JSON.stringify({
+                    error: 'Profile not found',
+                    details: profileError?.message || 'User profile does not exist',
+                    hint: 'Please contact support'
+                }),
                 { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
+
+        console.log('✅ Profile found:', profile.subscription_tier)
 
         // Verify user has access to OCR.space (Pro or Premium tier)
         if (profile.ocr_engine !== 'ocrspace') {

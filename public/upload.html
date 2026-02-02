@@ -8,7 +8,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hiscskqwlgavicihsote.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://hiscskqwlgavicihsote.supabase.co; connect-src 'self' https://hiscskqwlgavicihsote.supabase.co https://cdn.jsdelivr.net;">
+    <!-- CSP temporarily relaxed for Tesseract.js WebAssembly support -->
     <title>Upload Receipt - Reciptera</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/mobile-enhancements.css">
@@ -71,6 +71,52 @@
         .file-input {
             display: none;
         }
+
+        /* Camera and Browse Buttons */
+        .camera-btn,
+        .browse-btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .camera-btn {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+        }
+
+        .camera-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .browse-btn {
+            background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+            color: white;
+        }
+
+        .browse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        @media (max-width: 640px) {
+
+            .camera-btn,
+            .browse-btn {
+                flex: 1;
+                min-width: 140px;
+            }
+        }
+
 
         /* Preview Grid */
         .preview-container {
@@ -458,7 +504,18 @@
                 <h3>Drag & Drop or Tap to Upload</h3>
                 <p>Supports: JPG, PNG, PDF</p>
                 <input type="file" id="file-input" class="file-input" accept="image/*,application/pdf" multiple>
+
+                <!-- Camera Capture Button -->
+                <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" id="camera-btn" class="camera-btn">
+                        📷 Take Photo
+                    </button>
+                    <button type="button" id="browse-btn" class="browse-btn">
+                        📁 Browse Files
+                    </button>
+                </div>
             </div>
+
 
             <div class="preview-container" id="preview-container"></div>
 

@@ -201,7 +201,34 @@
             previewContainer.innerHTML = '';
             fileInput.value = '';
         });
+
+        // Camera button - opens camera on mobile
+        const cameraBtn = document.getElementById('camera-btn');
+        if (cameraBtn) {
+            cameraBtn.addEventListener('click', function (e) {
+                e.stopPropagation(); // Prevent upload area click
+                // Create a temporary file input with camera capture
+                const cameraInput = document.createElement('input');
+                cameraInput.type = 'file';
+                cameraInput.accept = 'image/*';
+                cameraInput.capture = 'environment'; // Use rear camera
+                cameraInput.onchange = function (e) {
+                    handleFiles(e.target.files);
+                };
+                cameraInput.click();
+            });
+        }
+
+        // Browse button - opens file picker
+        const browseBtn = document.getElementById('browse-btn');
+        if (browseBtn) {
+            browseBtn.addEventListener('click', function (e) {
+                e.stopPropagation(); // Prevent upload area click
+                fileInput.click();
+            });
+        }
     }
+
 
     async function handleFiles(files) {
         // Check upload limit before processing
@@ -732,8 +759,10 @@
             // Get auth token
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                throw new Error('No session found');
+                throw new Error('No session found - please login again');
             }
+
+            console.log('📡 Calling Edge Function...');
 
             // Call Supabase Edge Function
             const response = await fetch(
@@ -747,13 +776,32 @@
                 }
             );
 
+            console.log('📥 Edge Function response status:', response.status);
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Google Vision API failed');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('❌ Edge Function error:', errorData);
+
+                // Provide specific error messages
+                if (response.status === 401) {
+                    throw new Error('Authentication failed - please login again');
+                } else if (response.status === 403) {
+                    throw new Error('Access denied - upgrade to Pro for premium OCR');
+                } else if (response.status === 429) {
+                    throw new Error('Upload limit reached - upgrade your plan');
+                } else if (response.status === 500) {
+                    throw new Error(`Server error: ${errorData.error || 'OCR service unavailable'}`);
+                } else {
+                    throw new Error(errorData.message || errorData.error || 'OCR processing failed');
+                }
             }
 
             const result = await response.json();
-            console.log('✅ Google Vision result:', result);
+            console.log('✅ OCR.space result:', result);
+
+            if (!result.success) {
+                throw new Error(result.error || 'OCR processing failed');
+            }
 
             return {
                 success: true,
@@ -761,13 +809,14 @@
                 usage: result.usage
             };
         } catch (error) {
-            console.error('❌ Google Vision error:', error);
+            console.error('❌ OCR.space error:', error);
             return {
                 success: false,
                 error: error.message
             };
         }
     }
+
 
     // ========== OCR PROCESSING (ROUTES TO CORRECT ENGINE) ==========
 
@@ -949,9 +998,97 @@
         } catch (error) {
             console.error('❌ OCR error:', error);
 
-            // User-friendly error message (never say "AI failed")
-            ocrStatus.textContent = '⚠️ Smart capture unavailable. Please enter details manually.';
-            ocrStatus.style.color = '#DC2626';
+            // CRITICAL: For Pro users, show detailed error and offer fallback
+            if (userSubscriptionInfo && userSubscriptionInfo.ocr_engine === 'ocrspace') {
+                console.error('🚨 PREMIUM OCR FAILED:', error.message);
+
+                // Show detailed error to help debug
+                ocrStatus.innerHTML = `
+                    <div style="text-align: left;">
+                        <div style="color: #DC2626; font-weight: 600; margin-bottom: 0.5rem;">⚠️ Premium OCR Unavailable</div>
+                        <div style="color: #6B7280; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                            Error: ${error.message}
+                        </div>
+                        <div style="color: #059669; font-size: 0.875rem;">
+                            ✓ Falling back to basic OCR...
+                        </div>
+                    </div>
+                `;
+
+                // FALLBACK: Try Tesseract as backup for Pro users
+                try {
+                    ocrProgressFill.style.width = '20%';
+                    console.log('🔄 Attempting fallback to Tesseract OCR...');
+
+                    // Preprocess image
+                    const processedImage = await preprocessImage(imageFile);
+                    ocrProgressFill.style.width = '30%';
+
+                    // Process with Tesseract
+                    const { data: { text } } = await Tesseract.recognize(
+                        processedImage,
+                        'eng',
+                        {
+                            logger: m => {
+                                if (m.status === 'recognizing text') {
+                                    const progress = Math.floor(m.progress * 60) + 30;
+                                    ocrProgressFill.style.width = progress + '%';
+                                }
+                            }
+                        }
+                    );
+
+                    ocrProgressFill.style.width = '90%';
+
+                    // Parse the text
+                    const lines = getLines(text);
+                    const merchant = extractMerchant(lines);
+                    const total = extractTotal(lines);
+                    const date = extractDate(lines);
+                    const tax = extractTax(lines);
+
+                    const extractedData = {
+                        merchant,
+                        amount: total,
+                        date,
+                        confidence: {
+                            merchant: merchantConfidence(merchant),
+                            amount: totalConfidence(total),
+                            date: dateConfidence(date)
+                        }
+                    };
+
+                    // Fill form with fallback data
+                    fillFormWithOCRData(extractedData, tax);
+
+                    ocrProgressFill.style.width = '100%';
+                    ocrStatus.innerHTML = `
+                        <div style="color: #059669;">
+                            ✅ Fallback OCR completed successfully!
+                        </div>
+                    `;
+
+                    document.getElementById('receipt-form').style.display = 'block';
+
+                    setTimeout(() => {
+                        ocrLoading.classList.remove('active');
+                    }, 1500);
+
+                    return; // Exit successfully
+
+                } catch (fallbackError) {
+                    console.error('❌ Fallback OCR also failed:', fallbackError);
+                    ocrStatus.innerHTML = `
+                        <div style="color: #DC2626;">
+                            ⚠️ Both OCR methods failed. Please enter details manually.
+                        </div>
+                    `;
+                }
+            } else {
+                // Free user error (less critical)
+                ocrStatus.textContent = '⚠️ Smart capture unavailable. Please enter details manually.';
+                ocrStatus.style.color = '#DC2626';
+            }
 
             // Show form for manual entry
             document.getElementById('receipt-form').style.display = 'block';
@@ -961,6 +1098,73 @@
             }, 2000);
         }
     }
+
+    // Helper function to fill form with OCR data (extracted for reuse)
+    function fillFormWithOCRData(extractedData, tax) {
+        const merchantInput = document.getElementById('merchant-name');
+        const amountInput = document.getElementById('amount');
+        const dateInput = document.getElementById('receipt-date');
+        const taxInput = document.getElementById('tax');
+        const aiNotice = document.getElementById('ai-notice');
+
+        let fieldsAutoFilled = 0;
+
+        // Store AI suggestions for tracking
+        aiSuggestions = {
+            merchant: extractedData.merchant || null,
+            amount: extractedData.amount || null,
+            tax: tax || null,
+            date: extractedData.date || null
+        };
+
+        // Fill Merchant
+        if (extractedData.merchant && extractedData.merchant !== 'Unknown') {
+            merchantInput.value = extractedData.merchant;
+            merchantInput.classList.add('auto-filled');
+            showStatus(merchantInput, extractedData.confidence?.merchant || 0.9, 'merchant');
+            trackUserEdit(merchantInput, 'merchant', extractedData.merchant);
+            fieldsAutoFilled++;
+        }
+
+        // Fill Amount
+        if (extractedData.amount && extractedData.amount !== '0.00') {
+            amountInput.value = extractedData.amount;
+            amountInput.classList.add('auto-filled');
+            showStatus(amountInput, extractedData.confidence?.amount || 0.9, 'amount');
+            trackUserEdit(amountInput, 'amount', extractedData.amount);
+            fieldsAutoFilled++;
+        }
+
+        // Fill Date
+        if (extractedData.date) {
+            dateInput.value = extractedData.date;
+            dateInput.classList.add('auto-filled');
+            showStatus(dateInput, extractedData.confidence?.date || 0.9, 'date');
+            trackUserEdit(dateInput, 'date', extractedData.date);
+            fieldsAutoFilled++;
+        }
+
+        // Fill Tax
+        if (taxInput) {
+            if (tax) {
+                taxInput.value = tax;
+                taxInput.classList.add('auto-filled');
+                showStatus(taxInput, 0.9, 'tax');
+                trackUserEdit(taxInput, 'tax', tax);
+                fieldsAutoFilled++;
+            } else {
+                showStatus(taxInput, 0.4, 'tax');
+            }
+        }
+
+        // Show AI notice if any fields were auto-filled
+        if (fieldsAutoFilled > 0 && aiNotice) {
+            aiNotice.style.display = 'flex';
+        }
+
+        return fieldsAutoFilled;
+    }
+
 
     // Convert various date formats to YYYY-MM-DD
     function convertToISODate(dateStr) {

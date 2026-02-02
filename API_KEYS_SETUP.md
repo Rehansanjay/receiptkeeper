@@ -113,7 +113,7 @@ scoop install supabase
 ```powershell
 supabase --version
 ```
-Expected output: `supabase version X.X.X`
+Expected output: `supabase version X.X.X`  
 
 ### Step 2.2: Authenticate Supabase CLI
 
