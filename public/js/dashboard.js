@@ -132,11 +132,11 @@
                         🧾
                     </div>
                     <div class="receipt-info">
-                        <h3>${receipt.merchant_name}</h3>
+                        <h3>${SecurityUtils.escapeHtml(receipt.merchant_name)}</h3>
                         <div class="meta">
                             ${date} • ${receipt.is_business ? 'Business' : 'Personal'}
                         </div>
-                        ${cleanNotes ? `<div class="meta">${cleanNotes}</div>` : ''}
+                        ${cleanNotes ? `<div class="meta">${SecurityUtils.escapeHtml(cleanNotes)}</div>` : ''}
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
                         <div class="receipt-amount">${CurrencyFormatter.format(parseFloat(receipt.amount), userCurrency)}</div>
@@ -220,14 +220,16 @@
             }
         }
 
-        alert(`Receipt Details:\n\nMerchant: ${receipt.merchant_name}\nAmount: ${CurrencyFormatter.format(parseFloat(receipt.amount), userCurrency)}\nTax: ${CurrencyFormatter.format(taxValue, userCurrency)}\nDate: ${receipt.receipt_date}\nType: ${receipt.is_business ? 'Business' : 'Personal'}\nNotes: ${receipt.notes || 'None'}`);
+        // Escape user input to prevent XSS in alert dialogs
+        const safeNotes = receipt.notes ? SecurityUtils.escapeHtml(receipt.notes) : 'None';
+        alert(`Receipt Details:\n\nMerchant: ${SecurityUtils.escapeHtml(receipt.merchant_name)}\nAmount: ${CurrencyFormatter.format(parseFloat(receipt.amount), userCurrency)}\nTax: ${CurrencyFormatter.format(taxValue, userCurrency)}\nDate: ${receipt.receipt_date}\nType: ${receipt.is_business ? 'Business' : 'Personal'}\nNotes: ${safeNotes}`);
     }
 
     async function deleteReceipt(id) {
         const receipt = allReceipts.find(r => r.id === id);
         if (!receipt) return;
 
-        const confirmMsg = `Are you sure you want to delete this receipt?\n\nMerchant: ${receipt.merchant_name}\nAmount: ${CurrencyFormatter.format(parseFloat(receipt.amount), userCurrency)}\n\nThis action cannot be undone.`;
+        const confirmMsg = `Are you sure you want to delete this receipt?\n\nMerchant: ${SecurityUtils.escapeHtml(receipt.merchant_name)}\nAmount: ${CurrencyFormatter.format(parseFloat(receipt.amount), userCurrency)}\n\nThis action cannot be undone.`;
 
         if (!confirm(confirmMsg)) return;
 
@@ -287,7 +289,7 @@
         toast.className = 'delete-toast';
         toast.innerHTML = `
             <span>✅</span>
-            <span>Deleted receipt from <strong>${merchantName}</strong></span>
+            <span>Deleted receipt from <strong>${SecurityUtils.escapeHtml(merchantName)}</strong></span>
         `;
         toast.style.cssText = `
             position: fixed;
